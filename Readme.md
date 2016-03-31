@@ -15,6 +15,6 @@ You'll need to use [my fork of OakCore](https://github.com/kh90909/OakCore/tree/
 * A tidy layout
 * Mobile browser compatibility
 
-**Test it out here: https://rawgit.com/kh90909/OakTerm/master/index.html**
+**Test it out here: http://rawgit.com/kh90909/OakTerm/master/index.html**
 
 After logging in, your Particle.io access token will be cached in your browser's localstorage so that you don't have to re-enter your email and password each time. Click the logout button to clear the token.
