@@ -11,8 +11,15 @@ $(function() {
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
-  $("#login_button").click(function(){
+  $("#login_button").click(function(e){
+    e.preventDefault();
     do_login();
+  });
+
+  $("#login input").keypress(function(event) {
+    if (event.which == 13) {
+        do_login();
+    }
   });
 
   if(access_token != null){
@@ -66,7 +73,7 @@ $(function() {
   function update_devices(devices){
     console.log('Devices: ', devices);
     $("#deviceIDs").html('');
-    $.each(devices.body, function(idx,item) {
+    _.each(devices.body, function(item, idx) {
       $("#deviceIDs").append('<option id="'+item.id+'">'+item.id+'</option>');
     });
     current_device=$("#deviceIDs").val()
@@ -87,12 +94,12 @@ $(function() {
     console.log('update_devinfo(): connected='+data.body.connected);
     console.log('update_devinfo(): variables='+data.body.variables);
     console.log('update_devinfo(): functions='+data.body.functions);
-    $("#vars").html('');
-    $.each(data.body.variables, function(idx,item) {
+
+    _.each(data.body.variables, function(item, idx) {
       $("#vars").append('<option id="'+item.name+'">'+item.name+'</option>');
     });
     $("#funcs").html('');
-    $.each(data.body.functions, function(idx,item) {
+    _.each(data.body.functions, function(item, idx) {
       $("#funcs").append('<option id="'+item+'">'+item+'</option>');
     });
   }
@@ -201,22 +208,10 @@ $(function() {
 });
 
 function set_heights(){
-  var header_height = $("#header").outerHeight(true);
-  var footer_height = $("#footer").outerHeight(true);
-  console.log('body height: '+$("body").outerHeight(true));
-  var content_outer = $("#content").outerHeight(true)-$("#content").height()
-  var content_height = $("body").height() - header_height - footer_height - content_outer;
-  $("#content").height(content_height);
-  console.log('Header height: '+header_height);
-  console.log('Footer height: '+footer_height);
-  console.log('Content height: '+content_height);
-  console.log('Content top: '+$("#content").position().top);
+  var headerHeight = $("#header").outerHeight(true);
+  var footerHeight = $("#footer").outerHeight(true);
+  $("#content").css('padding-top', headerHeight+10);
+  $("#content").css('padding-bottom', footerHeight+10);
 }
 
 $(window).resize(set_heights);
-
-// Wait for window load
-$(window).load(function() {
-  // Animate loader off screen
-  $(".load").fadeOut(1000,function(){$("#wrapper").fadeIn(500);});
-});
