@@ -13,8 +13,8 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
     <link href="assets/css/style.css" media="all" rel="stylesheet" />
     <!-- Tether is required by Bootstrap v4 for the CDN version, which is lame if tooltips aren't used. A
-    compromise is to include the JS to satisfy Bootstrap - if tooltips are ever used, include the css here.
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tether/1.2.0/css/tether.min.css"> -->
+    compromise is to include the JS to satisfy Bootstrap - if tooltips are ever used, include the css here. -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tether/1.2.0/css/tether.min.css">
 
     <script src="https://cdn.jsdelivr.net/particle-api-js/5/particle.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -35,12 +35,12 @@
       </div>
 
       <div class="col-md-4 col-md-offset-4 center">
-        <form>
+        <form autocomplete="on" method="POST">
           <fieldset class="form-group">
-            <input type="email" class="form-control" id="login_email" placeholder="Particle Login email">
+            <input name="email" type="email" class="form-control" id="login_email" placeholder="Particle Login email">
           </fieldset>
           <fieldset class="form-group">
-            <input type="password" class="form-control" id="login_password" placeholder="Particle Password">
+            <input name="password" type="password" class="form-control" id="login_password" placeholder="Particle Password">
           </fieldset>
 
           <div id="login_error" style="color:red;font-weight:bold;display:none;">Invalid email or password.</div>
@@ -51,74 +51,98 @@
       </div>
     </div>
 
-    <div id="terminal" class="clearfix container-fluid">
-      <div id="header" class="navbar navbar-default navbar-fixed-top">
-        <button class="btn btn-default btn-sms" id="refresh">Refresh</button>
-        <button class="btn btn-default btn-sms" id="sendevent">Send Event</button>
-        <button class="btn btn-default btn-sms" id="reboot">Reboot</button>
-        <button class="btn btn-default btn-sms" id="configmode">Config Mode</button>
-        <button class="btn btn-default btn-sms" id="usermode">User Mode</button>
-        <label class="file">
-          <input type="file" id="file">
-          <span class="file-custom"></span>
-        </label>
+    <div id="terminal" class="clearfix">
+      <nav id="header" class=" navbar-fixed-top container-fluid">
+        <div class="col-md-3">
+          <h1>OakTerm</h1>
+        </div>
+
+        <form class="form-inline col-md-6">
+          <button class="btn btn-success" id="refresh" data-toggle="tooltip" data-placement="bottom" title="Refresh">
+            <i class="fa fa-refresh"></i></button>
+          <button class="btn btn-secondary" id="sendevent" data-toggle="tooltip" data-placement="bottom" title="Send Event">
+            <i class="fa fa-paper-plane"></i></button>
+          <button class="btn btn-danger" id="reboot" data-toggle="tooltip" data-placement="bottom" title="Reboot">
+            <i class="fa fa-power-off"></i></button>
+          <button class="btn btn-info" id="configmode" data-toggle="tooltip" data-placement="bottom" title="Config Mode">
+            <i class="fa fa-cogs"></i></button>
+          <button class="btn btn-warning" id="usermode" data-toggle="tooltip" data-placement="bottom" title="User Mode">
+            <i class="fa fa-user-secret"></i></button>
+        </form>
+
+        <form class="form-inline col-md-3">
+          <label class="file">
+            <input type="file" id="file">
+            <span class="file-custom"></span>
+          </label>
+        </form>
+      </nav>
+
+      <div class="container-fluid">
+        <div id="sidebar" class="col-md-3 fixed-sidebar">
+          <fieldset class="form-group">
+            <label for="deviceIDs">Device: </label> <span class="label label-danger" id="devstatus">offline</span>
+            <select id="deviceIDs" class="form-control">
+              <option>--</option>
+            </select>
+          </fieldset>
+
+          <fieldset class="form-group">
+            <label for="vars">Variables</label>
+            <select id="vars" class="form-control">
+              <option>Select a variable</option>
+              <option>temp</option>
+            </select>
+          </fieldset>
+
+          <fieldset class="form-group">
+            <label for="funcs">Functions</label>
+            <select id="funcs" class="form-control">
+              <option>None registered</option>
+            </select>
+          </fieldset>
+        </div>
+
+        <div id="content" class="col-md-9 col-md-push-3">
+            <div class="text_stdin">Text sent to device via stdin event</div>
+            <div class="text_stdout">Text from device via stdout event</div>
+            <div class="text_stderr">Text received via stderr event</div>
+            <div class="text_event">Event: Event Name - event data (if any) (other events sent from this device)</div>
+            <div class="text_sentevent">Event Sent: Event Name - event data (sent from dialog triggered by button above)</div>
+            <div class="text_variable">Variable: Variable Name - variable value (as triggered by dropdown above)</div>
+            <div class="text_function">Function: Function Name(sent argument value) - return value (as triggered by dropdown above)</div>
+
+            <br><br><br>
+
+            <p>Colors for different types of text should be readily configurable in CSS.</p>
+            <p>This list should auto scroll when it hits the bottom. Auto scroll should be configurable in settings modal.</p>
+            <p>Button that says "Gear Icon" should be a nice (and legally usable) gear icon to open a settings modal that allows the choice of what type of line ending is appended to sent data (\n,\r,\r\n or none), whether or not to send data on enter, and whether or not to auto scroll.</p>
+            <p>Selecting a function from the list or send event should bring up modals to enter arguments for functions and for send event: event name and optional data, and whether to send it to just selected device, all my devices, or all.</p>
+            <p>Upload should allow selecting a file and then send it via the API (might have to post directly to API endpoint, not sure if it works with SparkJS from browser).</p>
+            <p>Before this screen is shown a login prompt should be presented - this should be in pure javascript as a one page app - see github.com/digistump/OakSoftAP for an example (but this doesn't need to include all the sources like that does).</p>
+            <p>This should all be flexible mobile friendly layouts, buttons and text fields should be styled, with clean html, js, and css. Nothing from this demo needs to be used, this is purely to convey a very rough look, function, and feel start point.</p>
+            <p>"Send Data" box should take up as much room as possible while allowing for button and settings icon. Should send on hitting enter if that is enabled in settings</p>
+            <p>Text should wrap and never scroll horizontally.</p>
+            <p>List of devices should refresh whenever refresh is pressed and every 60 seconds, list of registered functions, variables, and device connected status should refresh when refresh is hit and every 10 seconds - those two times should be readily configurable from variables at the top of the javascript.</p>
+            <p>Should work in semi modern Firefox and Chrome, if a library is used (besides ParticleJS/SparkJS which will be 100% necessary) jQuery prefered but other libraries OK as well.</p>
+        </div><!-- #content -->
       </div>
 
-      <div id="sidebar" class="col-md-3 fixed-sidebar">
-        <fieldset class="form-group">
-          <label for="deviceIDs">Device: </label> <span class="label label-danger" id="devstatus">offline</span>
-          <select id="deviceIDs" class="form-control">
-            <option>--</option>
-          </select>
-        </fieldset>
+      <footer id="footer" class="container-fluid">
+        <div class="col-md-9">
+          <input type="text" class="form-control" id="senddata" placeholder="Send Data">
+        </div>
 
-        <fieldset class="form-group">
-          <label for="vars">Variables</label>
-          <select id="vars" class="form-control">
-            <option>Select a variable</option>
-            <option>temp</option>
-          </select>
-        </fieldset>
+        <div class="col-sm-1">
+          <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
+        </div>
 
-        <fieldset class="form-group">
-          <label for="funcs">Functions</label>
-          <select id="funcs" class="form-control">
-            <option>None registered</option>
-          </select>
-
-        </fieldset>
-
-      </div>
-
-      <div id="content" class="col-md-9 col-md-push-3">
-          <div style="color:grey">Text sent to device via stdin event</div>
-          <div style="color:white">Text from device via stdout event</div>
-          <div style="color:red">Text received via stderr event</div>
-          <div style="color:yellow">Event: Event Name - event data (if any) (other events sent from this device)</div>
-          <div style="color:orange">Event Sent: Event Name - event data (sent from dialog triggered by button above)</div>
-          <div style="color:aqua">Variable: Variable Name - variable value (as triggered by dropdown above)</div>
-          <div style="color:lime">Function: Function Name(sent argument value) - return value (as triggered by dropdown above)</div>
-
-          <br><br><br>
-
-          <p>Colors for different types of text should be readily configurable in CSS.</p>
-          <p>This list should auto scroll when it hits the bottom. Auto scroll should be configurable in settings modal.</p>
-          <p>Button that says "Gear Icon" should be a nice (and legally usable) gear icon to open a settings modal that allows the choice of what type of line ending is appended to sent data (\n,\r,\r\n or none), whether or not to send data on enter, and whether or not to auto scroll.</p>
-          <p>Selecting a function from the list or send event should bring up modals to enter arguments for functions and for send event: event name and optional data, and whether to send it to just selected device, all my devices, or all.</p>
-          <p>Upload should allow selecting a file and then send it via the API (might have to post directly to API endpoint, not sure if it works with SparkJS from browser).</p>
-          <p>Before this screen is shown a login prompt should be presented - this should be in pure javascript as a one page app - see github.com/digistump/OakSoftAP for an example (but this doesn't need to include all the sources like that does).</p>
-          <p>This should all be flexible mobile friendly layouts, buttons and text fields should be styled, with clean html, js, and css. Nothing from this demo needs to be used, this is purely to convey a very rough look, function, and feel start point.</p>
-          <p>"Send Data" box should take up as much room as possible while allowing for button and settings icon. Should send on hitting enter if that is enabled in settings</p>
-          <p>Text should wrap and never scroll horizontally.</p>
-          <p>List of devices should refresh whenever refresh is pressed and every 60 seconds, list of registered functions, variables, and device connected status should refresh when refresh is hit and every 10 seconds - those two times should be readily configurable from variables at the top of the javascript.</p>
-          <p>Should work in semi modern Firefox and Chrome, if a library is used (besides ParticleJS/SparkJS which will be 100% necessary) jQuery prefered but other libraries OK as well.</p>
-      </div><!-- #content -->
-
-      <footer id="footer" class="">
-        <input type="text" placeholder="Send Data" id="senddata" style="flex: 2; margin: 2px; color: #000;">
-          <button class="btn btn-default btn-sm" id="send">Send</button>
-          <button class="btn btn-default btn-sm"><i class="fa fa-cog"></i></button>
-          <button class="btn btn-default btn-sm" id="logout">Logout</button>
+        <div class="col-md-2 align-right">
+          <button class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Settings">
+            <i class="fa fa-cog"></i></button>
+          <button class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">
+            <i class="fa fa-sign-out"></i></button>
+        </div>
       </footer><!-- #footer -->
     </div><!-- #terminal -->
 

@@ -11,6 +11,8 @@ $(function() {
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
+  $('[data-toggle="tooltip"]').tooltip();
+
   $("#login_button").click(function(e){
     e.preventDefault();
     do_login();
@@ -146,7 +148,7 @@ $(function() {
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
       htmlstr='<div class="'+event_class+'">'+prestr+htmlstr+poststr+'</div>';
       $("#content").append(htmlstr);
-      $("#content").animate({ scrollTop: $("#content").prop("scrollHeight") - $("#content").height() }, 1);
+      $("html, body").animate({ scrollTop: $(document).height() }, 1000);
     });
   }
 
