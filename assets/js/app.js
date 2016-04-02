@@ -6,8 +6,6 @@ $(function() {
   var claimed_devices = "";
   var current_device = "";
 
-  //$('#settings').button({ icons: {primary:'ui-icon-gear'} });
-
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
@@ -24,9 +22,7 @@ $(function() {
     }
   });
 
-  if(access_token != null){
-    do_login();
-  }
+  do_login();
 
   function do_login(){
     login()
@@ -35,19 +31,44 @@ $(function() {
       .then(get_devinfo)
       .then(update_devinfo)
       .then(subscribe_events)
-      .then(display_event);
-      //.catch(error_handler)
+      .then(display_event)
+      .catch(function(err){ console.warn('Error: ', err); });
   }
 
   function login(){
-    if(access_token == null){
-      return particle.login({username: $('#login_email').val(),
-              password: $('#login_password').val()})
-        .then(login_success);
+    if(!access_token){
+      var email = $('#login_email').val();
+      var pass = $('#login_password').val();
+
+      if(email && pass){
+        return particle.login({
+          username: email,
+          password: pass
+        }).then(login_success, login_err);
+      } else{
+        return show_login('Missing credentials');
+      }
+    } else {
+      return particle.listDevices({ auth: access_token }).then(login_success, login_err);
     }
-    else{
-      return new Promise(function(resolve,reject){resolve(null)});
-    }
+  }
+
+  function show_login(rejectMsg){
+    return new Promise(function(resolve, reject){
+      $('#terminal').fadeOut(150, function(){
+        $('#login').fadeIn(150, set_heights);
+        if( rejectMsg) reject(rejectMsg);
+      });
+    });
+  }
+
+  function show_terminal(){
+     return new Promise(function(resolve, reject){
+      $('#login').fadeOut(150, function(){
+        $('#terminal').fadeIn(150, set_heights);
+        resolve();
+      });
+    });
   }
 
   function login_success(data){
@@ -55,9 +76,13 @@ $(function() {
     $('#login_error').hide();
     $('#login_email').val("");
     $('#login_password').val("");
-    access_token = data.body.access_token;
-    console.log('login_success(): access_token='+access_token);
-    localStorage.setItem("access_token", access_token);
+
+    if(data.body.access_token){
+      access_token = data.body.access_token;
+      localStorage.setItem("access_token", access_token);
+    }
+
+    show_terminal();
     get_devices();
   }
 
@@ -66,6 +91,7 @@ $(function() {
     $('#login_password').val("");
     $('#login_error').html(err.errorDescription);
     $('#login_error').show();
+    show_login();
   }
 
   function get_devices(){
@@ -79,7 +105,6 @@ $(function() {
       $("#deviceIDs").append('<option id="'+item.id+'">'+item.id+'</option>');
     });
     current_device=$("#deviceIDs").val()
-    $('#login').fadeOut(150,function(){$('#terminal').fadeIn(150,set_heights);});
   }
 
   function get_devinfo(){
