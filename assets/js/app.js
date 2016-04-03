@@ -5,10 +5,12 @@ $(function() {
   var claim_code = "";
   var claimed_devices = "";
   var current_device = "";
+  var settings = get_settings();
 
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
+  restore_settings();
   $('[data-toggle="tooltip"]').tooltip();
 
   $("#login_button").click(function(e){
@@ -232,6 +234,56 @@ $(function() {
     get_devinfo()
       .then(update_devinfo);
     },device_info_refresh_interval*1000);
+
+  $('#save-settings').on('click', save_settings);
+  $('#settings input, #settings select').on('change', save_settings);
+
+  function save_settings(){
+    var newSettings = $('#settings').serializeArray();
+    localStorage.setItem("settings", JSON.stringify(newSettings));
+    console.log( 'Saved settings:', newSettings);
+  }
+
+  function get_settings(){
+    var new_settings;
+    var saved_settings = localStorage.getItem("settings");
+    var defaults = [
+      {"name":"autoscroll","value":"onEvent"},
+      {"name":"lineends","value":"rn"},
+      {"name":"subenter","value":"true"}
+    ];
+
+    if(saved_settings){
+      try{
+        JSON.parse(saved_settings);
+        new_settings = _.extend(defaults, JSON.parse(saved_settings) );
+      } catch(e){
+        console.warn('Error: invalid localStorage settings JSON');
+        new_settings = defaults;
+      }
+    } else{
+      new_settings = defaults;
+      save_settings();
+    }
+
+    return new_settings;
+  }
+
+  function restore_settings(){
+    _.each(settings, function(item){
+      var $item = $('[name="'+item.name+'"]');
+
+      if($item.attr('type') == 'radio'){
+        $item.each(function(){
+          if( $(this).val() == item.value){
+            $(this).prop('checked', 'checked');
+          }
+        });
+      } else{
+        $item.val(item.value);
+      }
+    });
+  }
 });
 
 function set_heights(){
