@@ -94,13 +94,16 @@
             </select>
           </fieldset>
 
-          <fieldset class="form-group">
-            <label for="vars">Variables</label>
-            <select id="vars" class="form-control">
-              <option>Select a variable</option>
-              <option>temp</option>
-            </select>
-          </fieldset>
+          <label for="varstable">Variables</label>
+          <table class="table table-inverse" id="varstable">
+            <thead><tr>
+              <th>Name</th>
+              <th>Value</th>
+            </tr></thead>
+            <tbody id="varstbody"><tr>
+              <td colspan="2" class="centered"><i>None exposed by firmware</i></td>
+            </tr></tbody>
+          </table>
 
           <fieldset class="form-group">
             <label for="funcs">Functions</label>

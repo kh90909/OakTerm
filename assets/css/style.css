@@ -49,6 +49,11 @@ body::-webkit-scrollbar,
   content: "Upload File..."
 }
 .navbar label{ margin:0;}
+
+.centered{
+  text-align: center;
+}
+
 #footer .form-group.row{ margin:0;}
 
 /* Access Control */
