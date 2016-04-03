@@ -227,7 +227,8 @@ $(function() {
     $('body').css('overflow', 'auto')
   });
 
-  $('#show-sidebar').on('click touch', function(){
+  $('#show-sidebar').on('click touch', function(e){
+    e.preventDefault();
     $('.fixed-sidebar').toggleClass('open');
   });
 
