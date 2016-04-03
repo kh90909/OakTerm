@@ -144,14 +144,70 @@
           <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
         </div>
 
-        <div class="col-md-2 col-sm-6 align-right sm-align-right">
-          <button class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Settings">
+
+        <div class="col-md-2 align-right">
+          <button class="btn btn-info"  data-toggle="modal" data-target="#settings-modal">
             <i class="fa fa-cog"></i></button>
           <button class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">
             <i class="fa fa-sign-out"></i></button>
         </div>
       </footer><!-- #footer -->
     </div><!-- #terminal -->
+
+    <div class="modal fade" id="settings-modal">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">OakTerm Settings</h4>
+          </div>
+          <div class="modal-body">
+            <form id="settings">
+              <div class="form-group row">
+                <label for="autoscroll" class="col-sm-3 form-control-label">Auto-Scroll</label>
+                <div class="col-sm-9">
+                  <select name="autoscroll" id="autoscroll" class="form-control">
+                    <option value="pageBtm">When at page bottom</option>
+                    <option value="onEvent">When new events arrive</option>
+                    <option value="none">Never</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label for="lineends" class="col-sm-3 form-control-label">Line Endings</label>
+                <div class="col-sm-9">
+                  <select name="lineends" id="lineends" class="form-control">
+                    <option value="r">\r</option>
+                    <option value="n">\n</option>
+                    <option value="rn">\r\n</option>
+                    <option value="none">none</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label for="subenter" class="col-sm-3 form-control-label">Submit on Enter</label>
+                <div class="col-sm-9">
+                  <div class="c-inputs-stacked">
+                    <label class="c-input c-radio">
+                      <input id="subenter-on" name="subenter" type="radio" value="true">
+                      <span class="c-indicator"></span> Enabled
+                    </label>
+                    <label class="c-input c-radio">
+                      <input id="subenter-off" name="subenter" type="radio" value="false">
+                      <span class="c-indicator"></span> Disabled
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
   </body>
 </html>

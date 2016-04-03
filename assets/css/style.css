@@ -93,6 +93,20 @@ body::-webkit-scrollbar,
   padding-bottom:70px;
 }
 
+/* Modal */
+.modal{
+  color:#373a3c;
+}
+.modal .form-control{
+  background: #f1f1f1;
+  color:#373a3c;
+  border-color:#bbbbbb;
+  box-shadow: none;
+}
+.modal .form-control:focus{
+  border-color:#373a3c;
+}
+
 /* Terminal Content */
 .selected{
   background-color: #1f8dd6;

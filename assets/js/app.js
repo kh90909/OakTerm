@@ -6,10 +6,11 @@ $(function() {
   var claimed_devices = "";
   var current_device = "";
   var pollers = [];
-
+  var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
+  restore_settings();
   $('[data-toggle="tooltip"]').tooltip();
 
   $("#login_button").click(function(e){
@@ -62,6 +63,7 @@ $(function() {
       $('#terminal').fadeOut(150, function(){
         $('#login').fadeIn(150, set_heights);
         if( rejectMsg) reject(rejectMsg);
+        else resolve();
       });
     });
   }
@@ -126,9 +128,9 @@ $(function() {
     } else{
       $("#devstatus").removeClass('label-success').addClass('label-danger').html('offline');
     }
-    console.log('update_devinfo(): connected='+data.body.connected);
-    console.log('update_devinfo(): variables='+data.body.variables);
-    console.log('update_devinfo(): functions='+data.body.functions);
+    console.log('update_devinfo(): ', data.body);
+    //console.log('update_devinfo(): variables='+data.body.variables);
+    //console.log('update_devinfo(): functions='+data.body.functions);
 
     _.each(data.body.variables, function(item, idx) {
       $("#vars").append('<option id="'+item.name+'">'+item.name+'</option>');
@@ -231,20 +233,22 @@ $(function() {
   });
 
   function start_pollers(){
-    return new Promise(function(){
+    return new Promise(function(resolve, reject){
       if( pollers.update_devices) clearTimeout( pollers.update_devices);
       pollers['update_devices'] = setInterval(function(){
-        console.log('Update device list timer');
+        console.log('Update device list timer', pollers);
         get_devices()
           .then(update_devices);
         },device_list_refresh_interval*1000);
 
       if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
       pollers['update_devinfo'] = setInterval(function(){
-        console.log('Update device info timer');
+        console.log('Update device info timer', pollers);
         get_devinfo()
           .then(update_devinfo);
         },device_info_refresh_interval*1000);
+
+      resolve();
     });
   }
 
@@ -262,6 +266,56 @@ $(function() {
   $('#file-btn').click(function(){
     $('#file-input').click();
   });
+
+  $('#save-settings').on('click', save_settings);
+  $('#settings input, #settings select').on('change', save_settings);
+
+  function save_settings(){
+    var newSettings = $('#settings').serializeArray();
+    localStorage.setItem("settings", JSON.stringify(newSettings));
+    console.log( 'Saved settings:', newSettings);
+  }
+
+  function get_settings(){
+    var new_settings;
+    var saved_settings = localStorage.getItem("settings");
+    var defaults = [
+      {"name":"autoscroll","value":"onEvent"},
+      {"name":"lineends","value":"rn"},
+      {"name":"subenter","value":"true"}
+    ];
+
+    if(saved_settings){
+      try{
+        JSON.parse(saved_settings);
+        new_settings = _.extend(defaults, JSON.parse(saved_settings) );
+      } catch(e){
+        console.warn('Error: invalid localStorage settings JSON');
+        new_settings = defaults;
+      }
+    } else{
+      new_settings = defaults;
+      save_settings();
+    }
+
+    return new_settings;
+  }
+
+  function restore_settings(){
+    _.each(settings, function(item){
+      var $item = $('[name="'+item.name+'"]');
+
+      if($item.attr('type') == 'radio'){
+        $item.each(function(){
+          if( $(this).val() == item.value){
+            $(this).prop('checked', 'checked');
+          }
+        });
+      } else{
+        $item.val(item.value);
+      }
+    });
+  }
 });
 
 function set_heights(){
