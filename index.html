@@ -53,11 +53,13 @@
 
     <div id="terminal" class="clearfix">
       <nav id="header" class=" navbar-fixed-top container-fluid">
-        <div class="col-md-3">
+        <a href="#" id="show-sidebar" class="hidden-md-up col-sm-1"><i class="fa fa-bars"></i></a>
+
+        <div class="col-md-3 col-sm-4 col-xs-12 xs-center">
           <h1>OakTerm</h1>
         </div>
 
-        <form class="form-inline col-md-6">
+        <div class="col-md-4 col-sm-7 col-xs-12 sm-align-right xs-center">
           <button class="btn btn-success" id="refresh" data-toggle="tooltip" data-placement="bottom" title="Refresh">
             <i class="fa fa-refresh"></i></button>
           <button class="btn btn-secondary" id="sendevent" data-toggle="tooltip" data-placement="bottom" title="Send Event">
@@ -68,18 +70,20 @@
             <i class="fa fa-cogs"></i></button>
           <button class="btn btn-warning" id="usermode" data-toggle="tooltip" data-placement="bottom" title="User Mode">
             <i class="fa fa-user-secret"></i></button>
-        </form>
+          <button class="btn btn-default hidden-md-up" id="file-btn" data-toggle="tooltip" data-placement="bottom" title="Upload File">
+            <i class="fa fa-upload"></i></button>
+        </div>
 
-        <form class="form-inline col-md-3">
+        <form class="form-inline col-md-3 hidden-sm-down">
           <label class="file">
-            <input type="file" id="file">
+            <input type="file" id="file-input">
             <span class="file-custom"></span>
           </label>
         </form>
       </nav>
 
       <div class="container-fluid">
-        <div id="sidebar" class="col-md-3 fixed-sidebar">
+        <div id="sidebar" class="col-md-3 fixed-sidebar" >
           <fieldset class="form-group">
             <label for="deviceIDs">Device: </label> <span class="label label-danger" id="devstatus">offline</span>
             <select id="deviceIDs" class="form-control">
@@ -129,15 +133,15 @@
       </div>
 
       <footer id="footer" class="container-fluid">
-        <div class="col-md-9">
+        <div class="col-md-8">
           <input type="text" class="form-control" id="senddata" placeholder="Send Data">
         </div>
 
-        <div class="col-sm-1">
+        <div class="col-md-2 col-xs-6">
           <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
         </div>
 
-        <div class="col-md-2 align-right">
+        <div class="col-md-2 col-sm-6 align-right sm-align-right">
           <button class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Settings">
             <i class="fa fa-cog"></i></button>
           <button class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">

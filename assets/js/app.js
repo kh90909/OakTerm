@@ -221,6 +221,20 @@ $(function() {
       .then(update_devinfo);
   });
 
+  $('#sidebar').hover(function(){
+    $('body').css('overflow', 'hidden');
+  }, function(){
+    $('body').css('overflow', 'auto')
+  });
+
+  $('#show-sidebar').on('click touch', function(){
+    $('.fixed-sidebar').toggleClass('open');
+  });
+
+  $('#file-btn').click(function(){
+    $('#file-input').click();
+  })
+
   setInterval(function(){
     console.log('Update device list timer');
     get_devices()
@@ -239,6 +253,11 @@ function set_heights(){
   var footerHeight = $("#footer").outerHeight(true);
   $("#content").css('padding-top', headerHeight+10);
   $("#content").css('padding-bottom', footerHeight+10);
+
+  if($(window).width() < 768){
+    $('.fixed-sidebar').css('padding-top', headerHeight+10)
+    $('.fixed-sidebar').css('padding-bottom', footerHeight+10)
+  }
 }
 
 $(window).resize(set_heights);
