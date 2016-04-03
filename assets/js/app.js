@@ -126,7 +126,7 @@ $(function() {
       $("#varstbody").html('');
     }
     else if(!_.isEmpty(device_vars) && _.isEmpty(data.body.variables)){
-      $("#varstbody").html('<td colspan="3" class="centered"><i>None exposed by firmware</i></td>');
+      $("#varstbody").html('<td colspan="2" class="centered"><i>None exposed by firmware</i></td>');
     }
     _.each(device_vars, function(value, key) {
       if(!data.body.variables.hasOwnProperty(key)){
@@ -138,7 +138,6 @@ $(function() {
         device_vars[key]="";
         device_vartypes[key]=value;
         $("#varstbody").append('<tr><td>'+key+'</td>'+
-                               '<td>'+value+'</td>'+
                                '<td id="'+key+'">?</td></tr>');
       }
     });
