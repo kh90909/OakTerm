@@ -45,6 +45,11 @@ body, html{ background: #252830; color:#fff; }
   content: "Upload File..."
 }
 .navbar label{ margin:0;}
+
+.centered{
+  text-align: center;
+}
+
 #footer .form-group.row{ margin:0;}
 
 /* Access Control */

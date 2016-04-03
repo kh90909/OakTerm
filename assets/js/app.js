@@ -5,6 +5,8 @@ $(function() {
   var claim_code = "";
   var claimed_devices = "";
   var current_device = "";
+  var device_vars = {};
+  var device_vartypes = {};
 
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
@@ -30,6 +32,7 @@ $(function() {
       .then(update_devices)
       .then(get_devinfo)
       .then(update_devinfo)
+      .then(get_variables)
       .then(subscribe_events)
       .then(display_event)
       .catch(function(err){ console.warn('Error: ', err); });
@@ -118,17 +121,59 @@ $(function() {
     else{
       $("#devstatus").html('offline');
     }
-    console.log('update_devinfo(): connected='+data.body.connected);
-    console.log('update_devinfo(): variables='+data.body.variables);
-    console.log('update_devinfo(): functions='+data.body.functions);
 
-    _.each(data.body.variables, function(item, idx) {
-      $("#vars").append('<option id="'+item.name+'">'+item.name+'</option>');
+    if (_.isEmpty(device_vars) && !_.isEmpty(data.body.variables)){
+      $("#varstbody").html('');
+    }
+    else if(!_.isEmpty(device_vars) && _.isEmpty(data.body.variables)){
+      $("#varstbody").html('<td colspan="3" class="centered"><i>None exposed by firmware</i></td>');
+    }
+    _.each(device_vars, function(value, key) {
+      if(!data.body.variables.hasOwnProperty(key)){
+          delete device_vars[key];
+      }
     });
+    _.each(data.body.variables, function(value, key) {
+      if(!device_vars.hasOwnProperty(key)){
+        device_vars[key]="";
+        device_vartypes[key]=value;
+        $("#varstbody").append('<tr><td>'+key+'</td>'+
+                               '<td>'+value+'</td>'+
+                               '<td id="'+key+'">?</td></tr>');
+      }
+    });
+
     $("#funcs").html('');
     _.each(data.body.functions, function(item, idx) {
       $("#funcs").append('<option id="'+item+'">'+item+'</option>');
     });
+  }
+
+  function get_variables(){
+    console.log('get_variables()');
+    _.each(device_vars, function(value, key) {
+      particle.getVariable({deviceId: current_device, name: key, auth: access_token})
+        .then(update_variable)
+    });
+  }
+
+  function update_variable(data){
+    if(device_vars[data.body.name] != data.body.result){
+      device_vars[data.body.name]=data.body.result;
+      if(device_vartypes[data.body.name] == 'double'){
+        $("[id='"+data.body.name+"']").html(data.body.result.toPrecision(6).toString());
+      }
+      else if(device_vartypes[data.body.name] == 'string'){
+        var str=data.body.result;
+        if(str.length>15){
+            str=str.substring(0,13)+'..';
+        }
+        $("[id='"+data.body.name+"']").html(str);
+      }
+      else{
+        $("[id='"+data.body.name+"']").html(data.body.result);
+      }
+    }
   }
 
   function subscribe_events(){
@@ -231,6 +276,7 @@ $(function() {
     console.log('Update device info timer');
     get_devinfo()
       .then(update_devinfo);
+    get_variables();
     },device_info_refresh_interval*1000);
 });
 
