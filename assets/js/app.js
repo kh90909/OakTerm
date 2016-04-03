@@ -247,6 +247,21 @@ $(function() {
         },device_info_refresh_interval*1000);
     });
   }
+
+  $('#sidebar').hover(function(){
+    $('body').css('overflow', 'hidden');
+  }, function(){
+    $('body').css('overflow', 'auto')
+  });
+
+  $('#show-sidebar').on('click touch', function(e){
+    e.preventDefault();
+    $('.fixed-sidebar').toggleClass('open');
+  });
+
+  $('#file-btn').click(function(){
+    $('#file-input').click();
+  });
 });
 
 function set_heights(){
@@ -254,6 +269,11 @@ function set_heights(){
   var footerHeight = $("#footer").outerHeight(true);
   $("#content").css('padding-top', headerHeight+10);
   $("#content").css('padding-bottom', footerHeight+10);
+
+  if($(window).width() < 768){
+    $('.fixed-sidebar').css('padding-top', headerHeight+10)
+    $('.fixed-sidebar').css('padding-bottom', footerHeight+10)
+  }
 }
 
 $(window).resize(set_heights);
