@@ -23,10 +23,10 @@ $(function() {
     }
   });
 
-  do_login();
+  do_login(true);
 
-  function do_login(){
-    login()
+  function do_login(firstRun){
+    login(firstRun)
       .then(start_pollers)
       .then(get_devices)
       .then(update_devices)
@@ -37,12 +37,14 @@ $(function() {
       .catch(function(err){ console.warn('Error: ', err); });
   }
 
-  function login(){
+  function login(firstRun){
+    $('#login_error').hide();
+
     if(!access_token){
       var email = $('#login_email').val();
       var pass = $('#login_password').val();
 
-      if(email && pass){
+      if(!firstRun){
         return particle.login({
           username: email,
           password: pass
@@ -76,8 +78,6 @@ $(function() {
   function login_success(data){
     $('#login_button').attr('disabled',false);
     $('#login_error').hide();
-    $('#login_email').val("");
-    $('#login_password').val("");
 
     if(data.body.access_token){
       access_token = data.body.access_token;
@@ -90,9 +90,13 @@ $(function() {
 
   function login_err(err){
     $('#login_button').attr('disabled',false);
-    $('#login_password').val("");
-    $('#login_error').html(err.errorDescription);
+    $('#login_error').html(err.errorDescription.split(' - ')[1]);
     $('#login_error').show();
+
+    if(err.body.error == 'invalid_token'){
+      localStorage.removeItem("access_token");
+    }
+
     show_login();
   }
 
@@ -104,7 +108,10 @@ $(function() {
     console.log('Devices: ', devices);
     $("#deviceIDs").html('');
     _.each(devices.body, function(item, idx) {
-      $("#deviceIDs").append('<option id="'+item.id+'">'+item.id+'</option>');
+      var name = "";
+      if(item.name) name += item.name+' ';
+      name += '('+item.id.slice(-6)+')';
+      $("#deviceIDs").append('<option value="'+item.id+'">'+name+'</option>');
     });
     current_device=$("#deviceIDs").val()
   }
@@ -115,10 +122,9 @@ $(function() {
 
   function update_devinfo(data){
     if(data.body.connected){
-      $("#devstatus").html('online');
-    }
-    else{
-      $("#devstatus").html('offline');
+      $("#devstatus").removeClass('label-danger').addClass('label-success').html('online');
+    } else{
+      $("#devstatus").removeClass('label-success').addClass('label-danger').html('offline');
     }
     console.log('update_devinfo(): connected='+data.body.connected);
     console.log('update_devinfo(): variables='+data.body.variables);
@@ -218,7 +224,8 @@ $(function() {
   });
 
   $("#deviceIDs").on('change',function(){
-    current_device=this.value
+    current_device=this.value;
+    console.log( this.value, this);
     get_devinfo()
       .then(update_devinfo);
   });

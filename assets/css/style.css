@@ -51,6 +51,9 @@ body, html{ background: #252830; color:#fff; }
 #login{ display: none; padding-top:30px; }
 #terminal{ display: none; }
 
+/* Login Form */
+#login_error{ display: none; }
+
 /* Terminal Areas */
 #header,#footer,#content{
   color:#fff;
