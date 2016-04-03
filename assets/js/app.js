@@ -7,10 +7,12 @@ $(function() {
   var current_device = "";
   var device_vars = {};
   var device_vartypes = {};
+  var settings = get_settings();
 
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
+  restore_settings();
   $('[data-toggle="tooltip"]').tooltip();
 
   $("#login_button").click(function(e){
@@ -24,10 +26,10 @@ $(function() {
     }
   });
 
-  do_login();
+  do_login(true);
 
-  function do_login(){
-    login()
+  function do_login(firstRun){
+    login(firstRun)
       .then(get_devices)
       .then(update_devices)
       .then(get_devinfo)
@@ -38,12 +40,14 @@ $(function() {
       .catch(function(err){ console.warn('Error: ', err); });
   }
 
-  function login(){
+  function login(firstRun){
+    $('#login_error').hide();
+
     if(!access_token){
       var email = $('#login_email').val();
       var pass = $('#login_password').val();
 
-      if(email && pass){
+      if(!firstRun){
         return particle.login({
           username: email,
           password: pass
@@ -77,8 +81,6 @@ $(function() {
   function login_success(data){
     $('#login_button').attr('disabled',false);
     $('#login_error').hide();
-    $('#login_email').val("");
-    $('#login_password').val("");
 
     if(data.body.access_token){
       access_token = data.body.access_token;
@@ -91,9 +93,13 @@ $(function() {
 
   function login_err(err){
     $('#login_button').attr('disabled',false);
-    $('#login_password').val("");
-    $('#login_error').html(err.errorDescription);
+    $('#login_error').html(err.errorDescription.split(' - ')[1]);
     $('#login_error').show();
+
+    if(err.body.error == 'invalid_token'){
+      localStorage.removeItem("access_token");
+    }
+
     show_login();
   }
 
@@ -105,7 +111,10 @@ $(function() {
     console.log('Devices: ', devices);
     $("#deviceIDs").html('');
     _.each(devices.body, function(item, idx) {
-      $("#deviceIDs").append('<option id="'+item.id+'">'+item.id+'</option>');
+      var name = "";
+      if(item.name) name += item.name+' ';
+      name += '('+item.id.slice(-6)+')';
+      $("#deviceIDs").append('<option value="'+item.id+'">'+name+'</option>');
     });
     current_device=$("#deviceIDs").val()
   }
@@ -116,10 +125,9 @@ $(function() {
 
   function update_devinfo(data){
     if(data.body.connected){
-      $("#devstatus").html('online');
-    }
-    else{
-      $("#devstatus").html('offline');
+      $("#devstatus").removeClass('label-danger').addClass('label-success').html('online');
+    } else{
+      $("#devstatus").removeClass('label-success').addClass('label-danger').html('offline');
     }
 
     if (_.isEmpty(device_vars) && !_.isEmpty(data.body.variables)){
@@ -260,10 +268,26 @@ $(function() {
   });
 
   $("#deviceIDs").on('change',function(){
-    current_device=this.value
+    current_device=this.value;
+    console.log( this.value, this);
     get_devinfo()
       .then(update_devinfo);
   });
+
+  $('#sidebar').hover(function(){
+    $('body').css('overflow', 'hidden');
+  }, function(){
+    $('body').css('overflow', 'auto')
+  });
+
+  $('#show-sidebar').on('click touch', function(e){
+    e.preventDefault();
+    $('.fixed-sidebar').toggleClass('open');
+  });
+
+  $('#file-btn').click(function(){
+    $('#file-input').click();
+  })
 
   setInterval(function(){
     console.log('Update device list timer');
@@ -277,6 +301,56 @@ $(function() {
       .then(update_devinfo);
     get_variables();
     },device_info_refresh_interval*1000);
+
+  $('#save-settings').on('click', save_settings);
+  $('#settings input, #settings select').on('change', save_settings);
+
+  function save_settings(){
+    var newSettings = $('#settings').serializeArray();
+    localStorage.setItem("settings", JSON.stringify(newSettings));
+    console.log( 'Saved settings:', newSettings);
+  }
+
+  function get_settings(){
+    var new_settings;
+    var saved_settings = localStorage.getItem("settings");
+    var defaults = [
+      {"name":"autoscroll","value":"onEvent"},
+      {"name":"lineends","value":"rn"},
+      {"name":"subenter","value":"true"}
+    ];
+
+    if(saved_settings){
+      try{
+        JSON.parse(saved_settings);
+        new_settings = _.extend(defaults, JSON.parse(saved_settings) );
+      } catch(e){
+        console.warn('Error: invalid localStorage settings JSON');
+        new_settings = defaults;
+      }
+    } else{
+      new_settings = defaults;
+      save_settings();
+    }
+
+    return new_settings;
+  }
+
+  function restore_settings(){
+    _.each(settings, function(item){
+      var $item = $('[name="'+item.name+'"]');
+
+      if($item.attr('type') == 'radio'){
+        $item.each(function(){
+          if( $(this).val() == item.value){
+            $(this).prop('checked', 'checked');
+          }
+        });
+      } else{
+        $item.val(item.value);
+      }
+    });
+  }
 });
 
 function set_heights(){
@@ -284,6 +358,11 @@ function set_heights(){
   var footerHeight = $("#footer").outerHeight(true);
   $("#content").css('padding-top', headerHeight+10);
   $("#content").css('padding-bottom', footerHeight+10);
+
+  if($(window).width() < 768){
+    $('.fixed-sidebar').css('padding-top', headerHeight+10)
+    $('.fixed-sidebar').css('padding-bottom', footerHeight+10)
+  }
 }
 
 $(window).resize(set_heights);

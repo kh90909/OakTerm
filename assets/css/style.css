@@ -5,6 +5,8 @@ body, html{ background: #252830; color:#fff; }
 .center{ text-align: center; }
 
 /* Bootstrap Overrides */
+body::-webkit-scrollbar,
+.fixed-sidebar::-webkit-scrollbar{ display: none }
 .form-control {
   display: block;
   width: 100%;
@@ -32,6 +34,8 @@ body, html{ background: #252830; color:#fff; }
   padding-top:70px;
   padding-bottom:70px;
   height:100%;
+  overflow-y:scroll;
+  z-index: 1;
 }
 .fixed-sidebar .form-control{
   max-width:90%;
@@ -56,6 +60,9 @@ body, html{ background: #252830; color:#fff; }
 #login{ display: none; padding-top:30px; }
 #terminal{ display: none; }
 
+/* Login Form */
+#login_error{ display: none; }
+
 /* Terminal Areas */
 #header,#footer,#content{
   color:#fff;
@@ -79,11 +86,11 @@ body, html{ background: #252830; color:#fff; }
   border-top: 1px gray solid;
   padding-top: .5em;
   padding-bottom: .5em;
-
   position: fixed;
   bottom:0;
   left:0;
   width:100%;
+  z-index: 2;
 }
 #content{
   font-family: Consolas, monospace, sans-serif;
@@ -91,15 +98,65 @@ body, html{ background: #252830; color:#fff; }
   padding-bottom:70px;
 }
 
+/* Modal */
+.modal{
+  color:#373a3c;
+}
+.modal .form-control{
+  background: #f1f1f1;
+  color:#373a3c;
+  border-color:#bbbbbb;
+  box-shadow: none;
+}
+.modal .form-control:focus{
+  border-color:#373a3c;
+}
+
 /* Terminal Content */
 .selected{
   background-color: #1f8dd6;
   color: white;
 }
-.text_stdin     { color: #808080;  }
+.text_stdin     { color: #808080; }
 .text_stdout    { color: #ffffff; }
-.text_stderr    { color: #d9534f;   }
-.text_event     { color: #DCDC00;}
-.text_sentevent { color: #f0ad4e;}
-.text_variable  { color: #5bc0de;  }
-.text_function  { color: #5cb85c;  }
+.text_stderr    { color: #d9534f; }
+.text_event     { color: #DCDC00; }
+.text_sentevent { color: #f0ad4e; }
+.text_variable  { color: #5bc0de; }
+.text_function  { color: #5cb85c; }
+
+/* Sidebar and Controls */
+#show-sidebar{
+  color:#fff;
+  font-size:2rem;
+  z-index: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px){
+  .sm-center{ text-align: center; }
+  .sm-align-right{ text-align: right; }
+
+  .fixed-sidebar{
+    transform:translateX(-100%);
+    transition: transform 0.2s ease-out;
+    min-width:50%;
+  }
+  .fixed-sidebar.open{
+    transform:translateX(0%);
+  }
+  #footer > div[class^="col-"]{ margin:3px 0;}
+}
+@media (max-width: 544px){
+  .xs-center{ text-align: center; }
+  .xs-align-right{ text-align: right; }
+  #show-sidebar{
+    position: absolute;
+    top:5px;
+    left:10px;
+  }
+  .fixed-sidebar{
+    width:100%;
+  }
+
+}
