@@ -165,10 +165,16 @@ $(function() {
   }
 
   function update_variable(data){
+    console.log('update_variable(): ',data.body.name,'('+device_vartypes[data.body.name]+') old val:',device_vars[data.body.name],' new val:',data.body.result)
     if(device_vars[data.body.name] != data.body.result){
       device_vars[data.body.name]=data.body.result;
       if(device_vartypes[data.body.name] == 'double'){
-        $("[id='"+data.body.name+"']").html(data.body.result.toPrecision(6).toString());
+        if(data.body.result == null){
+          $("[id='"+data.body.name+"']").html('NaN/Inf');
+        }
+        else{
+          $("[id='"+data.body.name+"']").html(data.body.result.toPrecision(6).toString());
+        }
       }
       else if(device_vartypes[data.body.name] == 'string'){
         var str=data.body.result;
