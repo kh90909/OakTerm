@@ -22,10 +22,10 @@ $(function() {
     }
   });
 
-  do_login();
+  do_login(true);
 
-  function do_login(){
-    login()
+  function do_login(firstRun){
+    login(firstRun)
       .then(get_devices)
       .then(update_devices)
       .then(get_devinfo)
@@ -35,12 +35,14 @@ $(function() {
       .catch(function(err){ console.warn('Error: ', err); });
   }
 
-  function login(){
+  function login(firstRun){
+    $('#login_error').hide();
+
     if(!access_token){
       var email = $('#login_email').val();
       var pass = $('#login_password').val();
 
-      if(email && pass){
+      if(!firstRun){
         return particle.login({
           username: email,
           password: pass
@@ -74,8 +76,6 @@ $(function() {
   function login_success(data){
     $('#login_button').attr('disabled',false);
     $('#login_error').hide();
-    $('#login_email').val("");
-    $('#login_password').val("");
 
     if(data.body.access_token){
       access_token = data.body.access_token;
@@ -88,9 +88,13 @@ $(function() {
 
   function login_err(err){
     $('#login_button').attr('disabled',false);
-    $('#login_password').val("");
-    $('#login_error').html(err.errorDescription);
+    $('#login_error').html(err.errorDescription.split(' - ')[1]);
     $('#login_error').show();
+
+    if(err.body.error == 'invalid_token'){
+      localStorage.removeItem("access_token");
+    }
+
     show_login();
   }
 
