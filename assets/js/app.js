@@ -5,6 +5,7 @@ $(function() {
   var claim_code = "";
   var claimed_devices = "";
   var current_device = "";
+  var pollers = [];
 
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
@@ -26,6 +27,7 @@ $(function() {
 
   function do_login(){
     login()
+      .then(start_pollers)
       .then(get_devices)
       .then(update_devices)
       .then(get_devinfo)
@@ -221,17 +223,23 @@ $(function() {
       .then(update_devinfo);
   });
 
-  setInterval(function(){
-    console.log('Update device list timer');
-    get_devices()
-      .then(update_devices);
-    },device_list_refresh_interval*1000);
+  function start_pollers(){
+    return new Promise(function(){
+      if( pollers.update_devices) clearTimeout( pollers.update_devices);
+      pollers['update_devices'] = setInterval(function(){
+        console.log('Update device list timer');
+        get_devices()
+          .then(update_devices);
+        },device_list_refresh_interval*1000);
 
-  setInterval(function(){
-    console.log('Update device info timer');
-    get_devinfo()
-      .then(update_devinfo);
-    },device_info_refresh_interval*1000);
+      if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
+      pollers['update_devinfo'] = setInterval(function(){
+        console.log('Update device info timer');
+        get_devinfo()
+          .then(update_devinfo);
+        },device_info_refresh_interval*1000);
+    });
+  }
 });
 
 function set_heights(){
