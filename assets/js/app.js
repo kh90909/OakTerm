@@ -106,7 +106,10 @@ $(function() {
     console.log('Devices: ', devices);
     $("#deviceIDs").html('');
     _.each(devices.body, function(item, idx) {
-      $("#deviceIDs").append('<option id="'+item.id+'">'+item.id+'</option>');
+      var name = "";
+      if(item.name) name += item.name+' ';
+      name += '('+item.id.slice(-6)+')';
+      $("#deviceIDs").append('<option value="'+item.id+'">'+name+'</option>');
     });
     current_device=$("#deviceIDs").val()
   }
@@ -117,10 +120,9 @@ $(function() {
 
   function update_devinfo(data){
     if(data.body.connected){
-      $("#devstatus").html('online');
-    }
-    else{
-      $("#devstatus").html('offline');
+      $("#devstatus").removeClass('label-danger').addClass('label-success').html('online');
+    } else{
+      $("#devstatus").removeClass('label-success').addClass('label-danger').html('offline');
     }
     console.log('update_devinfo(): connected='+data.body.connected);
     console.log('update_devinfo(): variables='+data.body.variables);
@@ -220,7 +222,8 @@ $(function() {
   });
 
   $("#deviceIDs").on('change',function(){
-    current_device=this.value
+    current_device=this.value;
+    console.log( this.value, this);
     get_devinfo()
       .then(update_devinfo);
   });
