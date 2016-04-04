@@ -54,6 +54,17 @@ body::-webkit-scrollbar,
   text-align: center;
 }
 
+td.var{
+    max-width: 0;
+}
+
+td.var-value{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 99%;
+}
+
 #footer .form-group.row{ margin:0;}
 
 /* Access Control */

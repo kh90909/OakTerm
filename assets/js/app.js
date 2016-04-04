@@ -147,8 +147,8 @@ $(function() {
         device_vars[key]="";
         device_vartypes[key]=value;
         var varclass=device_varclasses[device_vartypes[key]];
-        $("#varstbody").append('<tr class='+varclass+' id='+key+'><td>'+key+'</td>'+
-                               '<td id="'+key+'">?</td></tr>');
+        $("#varstbody").append('<tr class='+varclass+' id='+key+'><td class="var">'+key+'</td>'+
+                               '<td id="'+key+'" class="var var-value">?</td></tr>');
         $("tr[id='"+key+"']").click(dump_variable);
       }
     });
@@ -180,11 +180,7 @@ $(function() {
         }
       }
       else if(device_vartypes[data.body.name] == 'string'){
-        var str=data.body.result;
-        if(str.length>15){
-            str=str.substring(0,13)+'..';
-        }
-        $("td[id='"+data.body.name+"']").html(str);
+        $("td[id='"+data.body.name+"']").html(data.body.result);
       }
       else{
         $("td[id='"+data.body.name+"']").html(data.body.result);
