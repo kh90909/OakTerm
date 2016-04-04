@@ -125,6 +125,10 @@ body::-webkit-scrollbar,
 .text_variable  { color: #5bc0de; }
 .text_function  { color: #5cb85c; }
 
+.var_int32 { color: #DCDC00; }
+.var_double { color: #f0ad4e; }
+.var_string { color: #5cb85c; }
+
 /* Sidebar and Controls */
 #show-sidebar{
   color:#fff;

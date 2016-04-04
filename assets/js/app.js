@@ -7,6 +7,7 @@ $(function() {
   var current_device = "";
   var device_vars = {};
   var device_vartypes = {};
+  var device_varclasses = {'int32': 'var_int32', 'double': 'var_double', 'string': 'var_string'};
   var settings = get_settings();
 
   var access_token = localStorage.getItem("access_token");
@@ -145,8 +146,10 @@ $(function() {
       if(!device_vars.hasOwnProperty(key)){
         device_vars[key]="";
         device_vartypes[key]=value;
-        $("#varstbody").append('<tr><td>'+key+'</td>'+
+        var varclass=device_varclasses[device_vartypes[key]];
+        $("#varstbody").append('<tr class='+varclass+' id='+key+'><td>'+key+'</td>'+
                                '<td id="'+key+'">?</td></tr>');
+        $("tr[id='"+key+"']").click(dump_variable);
       }
     });
 
@@ -173,7 +176,7 @@ $(function() {
           $("[id='"+data.body.name+"']").html('NaN/Inf');
         }
         else{
-          $("[id='"+data.body.name+"']").html(data.body.result.toPrecision(6).toString());
+          $("td[id='"+data.body.name+"']").html(data.body.result.toPrecision(6).toString());
         }
       }
       else if(device_vartypes[data.body.name] == 'string'){
@@ -181,12 +184,24 @@ $(function() {
         if(str.length>15){
             str=str.substring(0,13)+'..';
         }
-        $("[id='"+data.body.name+"']").html(str);
+        $("td[id='"+data.body.name+"']").html(str);
       }
       else{
-        $("[id='"+data.body.name+"']").html(data.body.result);
+        $("td[id='"+data.body.name+"']").html(data.body.result);
       }
     }
+  }
+
+  function dump_variable(event){
+    console.log('dump_variable(): click event:',event);
+    var id=this.id;
+    var vartype=device_vartypes[this.id];
+    var varclass=device_varclasses[vartype];
+    var htmlstr='<div class="text_variable">Variable '+id+': ' +
+                device_vars[this.id] +
+                ' <span class="'+varclass+'">('+vartype+')</span></div>';
+    $("#content").append(htmlstr);
+    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
   }
 
   function subscribe_events(){
