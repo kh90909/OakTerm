@@ -131,6 +131,9 @@ body::-webkit-scrollbar,
   font-size:2rem;
   z-index: 1;
 }
+#devstatus .label{ display: none; }
+#devstatus[data-status="true"] .online{ display: inline;}
+#devstatus[data-status="false"] .offline{ display: inline;}
 
 /* Responsive */
 @media (max-width: 768px){

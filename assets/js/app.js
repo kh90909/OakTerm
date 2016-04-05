@@ -1,5 +1,5 @@
 $(function() {
-  var device_list_refresh_interval=60; // seconds
+  var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
   var access_token = "";
   var claim_code = "";
@@ -11,6 +11,12 @@ $(function() {
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
+  var varTypeColors = {
+    bool: 'primary',
+    int: 'warning',
+    double: 'danger',
+    string: 'success'
+  };
 
   restore_settings();
   $('[data-toggle="tooltip"]').tooltip();
@@ -112,83 +118,91 @@ $(function() {
   function update_devices(devices){
     console.log('Devices: ', devices);
     $("#deviceIDs").html('');
+
     _.each(devices.body, function(item, idx) {
       var name = "";
       if(item.name) name += item.name+' ';
       name += '('+item.id.slice(-6)+')';
-      $("#deviceIDs").append('<option value="'+item.id+'">'+name+'</option>');
+
+      var $opt = $('<option>', {value: item.id, selected: (current_device == item.id), html: name });
+      $("#deviceIDs").append($opt);
     });
+
     current_device=$("#deviceIDs").val()
   }
 
   function get_devinfo(){
-    return particle.getDevice({deviceId: current_device,auth: access_token})
+    return particle.getDevice({deviceId: current_device, auth: access_token});
   }
 
   function update_devinfo(data){
-    if(data.body.connected){
-      $("#devstatus").removeClass('label-danger').addClass('label-success').html('online');
-    } else{
-      $("#devstatus").removeClass('label-success').addClass('label-danger').html('offline');
-    }
+    $("#devstatus").attr('data-status', data.body.connected);
 
-    if (_.isEmpty(device_vars) && !_.isEmpty(data.body.variables)){
-      $("#varstbody").html('');
-    }
-    else if(!_.isEmpty(device_vars) && _.isEmpty(data.body.variables)){
+    if(_.isEmpty(data.body.variables)){
       $("#varstbody").html('<td colspan="2" class="centered"><i>None exposed by firmware</i></td>');
-    }
-    _.each(device_vars, function(value, key) {
-      if(!data.body.variables.hasOwnProperty(key)){
-          delete device_vars[key];
-      }
-    });
-    _.each(data.body.variables, function(value, key) {
-      if(!device_vars.hasOwnProperty(key)){
-        device_vars[key]="";
-        device_vartypes[key]=value;
-        $("#varstbody").append('<tr><td>'+key+'</td>'+
-                               '<td id="'+key+'">?</td></tr>');
-      }
-    });
+    } else{
+      var new_vars = _.mapObject(data.body.variables, function(item, key){
+        return { type: item }
+      });
 
-    $("#funcs").html('');
-    _.each(data.body.functions, function(item, idx) {
-      $("#funcs").append('<option id="'+item+'">'+item+'</option>');
-    });
+      // remove missing device_vars, merge in from new_vars
+      _.each(device_vars, function(variable, name){
+        if( !new_vars[name]) delete device_vars[name];
+        $('#name').parents('tr').remove();
+      });
+
+      device_vars = $.extend(true, device_vars, new_vars)
+
+      $("#varstbody").html('');
+      _.each(device_vars, function(variable, name) {
+          var $row = $('<tr>');
+          var $var = $('<td>', {id: name, html: (typeof variable.value == 'undefined') ? '?' : variable.value.toString() });
+          var $btn = $('<button>', {type: 'button', "class":"btn btn-sm", html: name})
+            .addClass('btn-var-'+name)
+            .addClass('btn-'+varTypeColors[variable.type]);
+
+          $row
+            .append( $('<td>').append($btn) )
+            .append($var);
+
+          $("#varstbody").append($row);
+
+          $('.btn-var-'+name).tooltip({
+            placement: 'right',
+            title: variable.type
+          });
+      });
+    }
+
+    if(_.isEmpty(data.body.functions)){
+      $("#funcs").html('<option>--</option>');
+    } else{
+      _.each(data.body.functions, function(item, idx) {
+        $("#funcs").append('<option>', {value: item, html: item});
+      });
+    }
   }
 
   function get_variables(){
-    console.log('get_variables()');
-    _.each(device_vars, function(value, key) {
-      particle.getVariable({deviceId: current_device, name: key, auth: access_token})
+    _.each(device_vars, function(variable, name) {
+      particle.getVariable({deviceId: current_device, name: name, auth: access_token})
         .then(update_variable)
     });
   }
 
   function update_variable(data){
-    console.log('update_variable(): ',data.body.name,'('+device_vartypes[data.body.name]+') old val:',device_vars[data.body.name],' new val:',data.body.result)
-    if(device_vars[data.body.name] != data.body.result){
-      device_vars[data.body.name]=data.body.result;
-      if(device_vartypes[data.body.name] == 'double'){
-        if(data.body.result == null){
-          $("[id='"+data.body.name+"']").html('NaN/Inf');
-        }
-        else{
-          $("[id='"+data.body.name+"']").html(data.body.result.toPrecision(6).toString());
-        }
-      }
-      else if(device_vartypes[data.body.name] == 'string'){
-        var str=data.body.result;
-        if(str.length>15){
-            str=str.substring(0,13)+'..';
-        }
-        $("[id='"+data.body.name+"']").html(str);
-      }
-      else{
-        $("[id='"+data.body.name+"']").html(data.body.result);
-      }
+    device_vars[data.body.name].value = data.body.result;
+    var localVar = device_vars[data.body.name];
+    var result = "";
+
+    if((localVar.type == 'double') && (data.body.result == null)){
+      result = 'NaN/Inf';
     }
+
+    if(localVar.type == 'bool')
+      result = data.body.result.toString();
+
+    $("[id='"+data.body.name+"']").html(result);
   }
 
   function subscribe_events(){
@@ -277,7 +291,6 @@ $(function() {
 
   $("#deviceIDs").on('change',function(){
     current_device=this.value;
-    console.log( this.value, this);
     get_devinfo()
       .then(update_devinfo);
   });
@@ -286,16 +299,17 @@ $(function() {
     return new Promise(function(resolve, reject){
       if( pollers.update_devices) clearTimeout( pollers.update_devices);
       pollers['update_devices'] = setInterval(function(){
-        console.log('Update device list timer', pollers);
+        console.log('Update device list timer');
         get_devices()
           .then(update_devices);
         },device_list_refresh_interval*1000);
 
       if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
       pollers['update_devinfo'] = setInterval(function(){
-        console.log('Update device info timer', pollers);
+        console.log('Update device info timer');
         get_devinfo()
-          .then(update_devinfo);
+          .then(update_devinfo)
+          .then(get_variables);
         },device_info_refresh_interval*1000);
 
       resolve();

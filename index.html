@@ -88,7 +88,11 @@
       <div class="container-fluid">
         <div id="sidebar" class="col-md-3 fixed-sidebar" >
           <fieldset class="form-group">
-            <label for="deviceIDs">Device: </label> <span class="label label-danger" id="devstatus">offline</span>
+            <label for="deviceIDs">Device: </label>
+            <span id="devstatus" data-status="false">
+              <span class="label online label-success">online</span>
+              <span class="label offline label-danger">offline</span>
+            </span>
             <select id="deviceIDs" class="form-control">
               <option>--</option>
             </select>
@@ -108,7 +112,7 @@
           <fieldset class="form-group">
             <label for="funcs">Functions</label>
             <select id="funcs" class="form-control">
-              <option>None registered</option>
+              <option>--</option>
             </select>
           </fieldset>
         </div>
