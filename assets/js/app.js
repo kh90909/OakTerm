@@ -3,7 +3,8 @@ $(function() {
   var device_info_refresh_interval=10; // seconds
   var claim_code = "";
   var claimed_devices = "";
-  var current_device = "";
+  var all_devices;
+  var current_device = {};
   var pollers = [];
   var device_vars = {};
   var settings = get_settings();
@@ -28,8 +29,9 @@ $(function() {
   function do_login(firstRun){
     login(firstRun)
       .then(restore_settings)
-      .then(start_pollers)
+      .then(show_terminal)
       .then(get_devices)
+      //.then(start_pollers)
       .then(update_devices)
       .then(get_devinfo)
       .then(update_devinfo)
@@ -86,9 +88,6 @@ $(function() {
       access_token = data.body.access_token;
       localStorage.setItem("access_token", access_token);
     }
-
-    show_terminal();
-    get_devices();
   }
 
   function login_err(err){
@@ -109,6 +108,7 @@ $(function() {
 
   function update_devices(devices){
     console.log('Devices: ', devices);
+    all_devices = devices.body;
     $("#deviceIDs").html('');
 
     _.each(devices.body, function(item, idx) {
@@ -116,15 +116,19 @@ $(function() {
       if(item.name) name += item.name+' ';
       name += '('+item.id.slice(-6)+')';
 
-      var $opt = $('<option>', {value: item.id, selected: (current_device == item.id), html: name });
+      var curId = current_device ? current_device.id : false;
+      var $opt = $('<option>', {value: item.id, selected: (curId == item.id), html: name });
       $("#deviceIDs").append($opt);
     });
 
-    current_device=$("#deviceIDs").val()
+    current_device = _.findWhere(all_devices, {id: $("#deviceIDs").val()} );
+    if( current_device){
+      localStorage.setItem("current_device", JSON.stringify(current_device));
+    }
   }
 
   function get_devinfo(){
-    return particle.getDevice({deviceId: current_device, auth: access_token});
+    return particle.getDevice({deviceId: current_device.id, auth: access_token});
   }
 
   function update_devinfo(data){
@@ -166,6 +170,11 @@ $(function() {
       });
     }
 
+    $('#devtable tbody').html('');
+    _.each(_.pick(data.body, 'id', 'last_heard', 'last_ip_address'), function(val, idx){
+      $('#devtable tbody').append('<tr><td>'+idx+'</td><td><input class="form-control compact" value="'+val+'" /></td></tr>');
+    });
+
     if(_.isEmpty(data.body.functions)){
       $("#funcs").html('<option>--</option>');
     } else{
@@ -177,7 +186,7 @@ $(function() {
 
   function get_variables(){
     _.each(device_vars, function(variable, name) {
-      particle.getVariable({deviceId: current_device, name: name, auth: access_token})
+      particle.getVariable({deviceId: current_device.id, name: name, auth: access_token})
         .then(update_variable)
     });
   }
@@ -197,7 +206,6 @@ $(function() {
   }
 
   function dump_variable(event){
-    console.log('dump_variable(): click event:',event);
     var id=event.target.dataset.variable;
     var device_var = device_vars[id]
     var htmlstr='<div class="text_variable">Variable '+id+': ' +
@@ -207,7 +215,7 @@ $(function() {
   }
 
   function subscribe_events(){
-    return particle.getEventStream({deviceId: current_device,auth: access_token});
+    return particle.getEventStream({deviceId: current_device.id,auth: access_token});
   }
 
   function display_event(stream){
@@ -283,7 +291,11 @@ $(function() {
   $(document).on('click', '#varstable [data-variable]', dump_variable);
 
   $("#deviceIDs").on('change',function(){
-    current_device=this.value;
+
+    current_device= _.findWhere(all_devices, {id: this.value});
+    localStorage.setItem("current_device", JSON.stringify(current_device));
+    console.log('SETTING2', current_device)
+    $('#devtable tbody').html('');
     get_devinfo()
       .then(update_devinfo)
       .then(subscribe_events)
@@ -301,11 +313,27 @@ $(function() {
     $('.fixed-sidebar').toggleClass('open');
   });
 
+  $('#content').on('click touch', function(){
+    if( $('#sidebar').hasClass('open'))
+      $('.fixed-sidebar').toggleClass('open');
+  });
+
   $('#file-btn').click(function(){
     $('#file-input').click();
   });
 
   $('#settings input, #settings select').on('change', save_settings);
+
+  $('#device-details').on('hide.bs.collapse', toggle_arrow);
+  $('#device-details').on('show.bs.collapse', toggle_arrow);
+
+  $('#modal-rename-device').on('show.bs.modal', function (e) {
+    $('#modal-rename-device [data-bind="deviceName"]').text(current_device.name);
+  });
+
+  function toggle_arrow(e){
+    $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-down fa-angle-up');
+  }
 
   function terminal_print(content){
     $("#content").append(content);
@@ -376,7 +404,12 @@ $(function() {
 
   function restore_settings(){
     // App settings
-    current_device = localStorage.getItem("current_device");
+    try{
+      current_device = JSON.parse(localStorage.getItem("current_device"));
+    } catch(e){
+      current_device = null;
+    }
+    console.log('restore', current_device.id)
 
     // User settings modal
     _.each(settings, function(item){
@@ -393,6 +426,7 @@ $(function() {
       }
     });
   }
+
 });
 
 function set_heights(){
