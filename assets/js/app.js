@@ -7,16 +7,9 @@ $(function() {
   var current_device = "";
   var pollers = [];
   var device_vars = {};
-  var device_vartypes = {};
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
-  var varTypeColors = {
-    bool: 'primary',
-    int: 'warning',
-    double: 'danger',
-    string: 'success'
-  };
 
   restore_settings();
   $('[data-toggle="tooltip"]').tooltip();
@@ -159,7 +152,7 @@ $(function() {
           var $var = $('<td>', {id: name, html: (typeof variable.value == 'undefined') ? '?' : variable.value.toString() });
           var $btn = $('<button>', {type: 'button', "class":"btn btn-sm", html: name})
             .addClass('btn-var-'+name)
-            .addClass('btn-'+varTypeColors[variable.type]);
+            .addClass('var-type-'+variable.type);
 
           $row
             .append( $('<td>').append($btn) )
@@ -197,10 +190,9 @@ $(function() {
 
     if((localVar.type == 'double') && (data.body.result == null)){
       result = 'NaN/Inf';
-    }
-
-    if(localVar.type == 'bool')
+    } else{
       result = data.body.result.toString();
+    }
 
     $("[id='"+data.body.name+"']").html(result);
   }
@@ -292,7 +284,9 @@ $(function() {
   $("#deviceIDs").on('change',function(){
     current_device=this.value;
     get_devinfo()
-      .then(update_devinfo);
+      .then(update_devinfo)
+      .then(subscribe_events)
+      .then(display_event);
   });
 
   function start_pollers(){

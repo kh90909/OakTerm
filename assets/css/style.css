@@ -1,3 +1,27 @@
+/* Terminal Content */
+.selected{
+  background-color: #1f8dd6;
+  color: white;
+}
+.text_stdin     { color: #808080; }
+.text_stdout    { color: #ffffff; }
+.text_stderr    { color: #d9534f; }
+.text_event     { color: #DCDC00; }
+.text_sentevent { color: #f0ad4e; }
+.text_variable  { color: #5bc0de; }
+.text_function  { color: #5cb85c; }
+
+.var-type-bool  { background-color:#0275d8; border-color: #0275d8; }
+.var-type-int   { background-color:#f0ad4e; border-color: #f0ad4e; }
+.var-type-string{ background-color:#449d44; border-color: #419641; }
+.var-type-double{ background-color:#d9534f; border-color: #d9534f; }
+
+.var-type-bool:hover  { background-color:#025aa5; border-color: #01549b; }
+.var-type-int:hover   { background-color:#ec971f; border-color: #eb9316; }
+.var-type-string:hover{ background-color:#449d44; border-color: #419641; }
+.var-type-double:hover{ background-color:#c9302c; border-color: #c12e2a; }
+
+
 /* Global styling */
 html{ font-size:14px; }
 body, html{ background: #252830; color:#fff; }
@@ -111,19 +135,6 @@ body::-webkit-scrollbar,
 .modal .form-control:focus{
   border-color:#373a3c;
 }
-
-/* Terminal Content */
-.selected{
-  background-color: #1f8dd6;
-  color: white;
-}
-.text_stdin     { color: #808080; }
-.text_stdout    { color: #ffffff; }
-.text_stderr    { color: #d9534f; }
-.text_event     { color: #DCDC00; }
-.text_sentevent { color: #f0ad4e; }
-.text_variable  { color: #5bc0de; }
-.text_function  { color: #5cb85c; }
 
 /* Sidebar and Controls */
 #show-sidebar{
