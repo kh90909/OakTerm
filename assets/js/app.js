@@ -1,7 +1,6 @@
 $(function() {
   var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
-  var access_token = "";
   var claim_code = "";
   var claimed_devices = "";
   var current_device = "";
@@ -11,7 +10,6 @@ $(function() {
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
-  restore_settings();
   $('[data-toggle="tooltip"]').tooltip();
 
   $("#login_button").click(function(e){
@@ -29,6 +27,7 @@ $(function() {
 
   function do_login(firstRun){
     login(firstRun)
+      .then(restore_settings)
       .then(start_pollers)
       .then(get_devices)
       .then(update_devices)
@@ -270,6 +269,7 @@ $(function() {
 
   $("#logout").click(function(){
     localStorage.removeItem("access_token");
+    localStorage.removeItem("current_device");
     location.reload();
   });
 
@@ -375,6 +375,10 @@ $(function() {
   }
 
   function restore_settings(){
+    // App settings
+    current_device = localStorage.getItem("current_device");
+
+    // User settings modal
     _.each(settings, function(item){
       var $item = $('[name="'+item.name+'"]');
 
