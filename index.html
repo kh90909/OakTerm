@@ -87,27 +87,48 @@
 
       <div class="container-fluid">
         <div id="sidebar" class="col-md-3 fixed-sidebar">
-          <fieldset class="form-group">
+          <fieldset class="form-group device-select">
             <label for="deviceIDs"><h5>Device:</h5> </label>
             <span id="devstatus" data-status="false">
               <span class="label online label-success">online</span>
               <span class="label offline label-danger">offline</span>
             </span>
-            <select id="deviceIDs" class="form-control">
-              <option>--</option>
-            </select>
+
+            <div class="flex-input">
+              <select id="deviceIDs" class="form-control">
+                <option>--</option>
+              </select>
+              <button class="btn btn-sm btn-primary float-right" data-toggle="collapse" data-target="#device-details">
+              <i class="fa fa-angle-down"></i>
+            </button>
+            </div>
           </fieldset>
 
-          <label for="varstable"><h5>Variables</h5></label>
-          <table class="table" id="varstable">
-            <thead><tr>
-              <th>Name</th>
-              <th>Value</th>
-            </tr></thead>
-            <tbody id="varstbody">
-              <tr><td colspan="2" class="centered"><i>None exposed by firmware</i></td></tr>
-            </tbody>
-          </table>
+          <fieldset class="form-group">
+            <div class="collapse" id="device-details">
+              <table class="table compact" id="devtable">
+                <tfoot><tr><td></td><td class="align-right">
+                  <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modal-rename-device">
+                    Rename <i class="fa fa-pencil"></i>
+                  </button>
+                </td></tr></tfoot>
+                <tbody></tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-group">
+            <label for="varstable"><h5>Variables</h5></label>
+            <table class="table" id="varstable">
+              <thead><tr>
+                <th>Name</th>
+                <th>Value</th>
+              </tr></thead>
+              <tbody id="varstbody">
+                <tr><td colspan="2" class="centered"><em>None exposed by firmware</em></td></tr>
+              </tbody>
+            </table>
+          </fieldset>
 
           <fieldset class="form-group">
             <label for="funcs"><h5>Functions</h5></label>
@@ -143,25 +164,28 @@
       </div>
 
       <footer id="footer" class="container-fluid">
-        <div class="col-md-8">
-          <input type="text" class="form-control" id="senddata" placeholder="Send Data">
+        <div class="col-md-10">
+          <div class="flex-input">
+            <input type="text" class="form-control" id="senddata" placeholder="Send Data">
+            <button id="send" type="submit" class="btn btn-success hidden-sm-down"><i class="fa fa-paper-plane"></i> Send Data</button>
+          </div>
         </div>
 
-        <div class="col-md-2 col-xs-6">
-          <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
-        </div>
-
-
-        <div class="col-md-2 align-right">
-          <button class="btn btn-info"  data-toggle="modal" data-target="#settings-modal">
+        <div class="col-md-2 col-xs-6 align-right sm-align-left">
+          <button class="btn btn-info"  data-toggle="modal" data-target="#modal-settings">
             <i class="fa fa-cog"></i></button>
           <button class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">
             <i class="fa fa-sign-out"></i></button>
         </div>
+
+        <div class="col-xs-6 hidden-md-up align-right">
+          <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
+        </div>
+
       </footer><!-- #footer -->
     </div><!-- #terminal -->
 
-    <div class="modal fade" id="settings-modal">
+    <div class="modal fade" id="modal-settings">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -205,6 +229,30 @@
                       <span class="c-indicator"></span> Disabled
                     </label>
                   </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="modal-rename-device">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Rename Device: <span data-bind="deviceName"></span></h4>
+          </div>
+          <div class="modal-body">
+            <form id="rename-device">
+              <div class="form-group">
+                <label for="newname">New Name</label>
+                <div class="flex-input">
+                  <input type="text" class="form-control" placeholder="new device name" />
+                  <button id="rename_device" type="button" class="btn btn-danger">Rename Device</button>
                 </div>
               </div>
             </form>
