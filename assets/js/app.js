@@ -31,10 +31,10 @@ $(function() {
       .then(restore_settings)
       .then(show_terminal)
       .then(get_devices)
-      //.then(start_pollers)
       .then(update_devices)
       .then(get_devinfo)
       .then(update_devinfo)
+      .then(start_pollers)
       .then(get_variables)
       .then(subscribe_events)
       .then(display_event)
@@ -291,10 +291,9 @@ $(function() {
   $(document).on('click', '#varstable [data-variable]', dump_variable);
 
   $("#deviceIDs").on('change',function(){
-
     current_device= _.findWhere(all_devices, {id: this.value});
     localStorage.setItem("current_device", JSON.stringify(current_device));
-    console.log('SETTING2', current_device)
+
     $('#devtable tbody').html('');
     get_devinfo()
       .then(update_devinfo)
@@ -409,7 +408,6 @@ $(function() {
     } catch(e){
       current_device = null;
     }
-    console.log('restore', current_device.id)
 
     // User settings modal
     _.each(settings, function(item){
