@@ -149,8 +149,8 @@ $(function() {
       $("#varstbody").html('');
       _.each(device_vars, function(variable, name) {
           var $row = $('<tr>');
-          var $var = $('<td>', {id: name, html: (typeof variable.value == 'undefined') ? '?' : variable.value.toString() });
-          var $btn = $('<button>', {type: 'button', "class":"btn btn-sm", html: name})
+          var $var = $('<td>', {"data-variable": name, html: (typeof variable.value == 'undefined') ? '?' : variable.value.toString() });
+          var $btn = $('<button>', {type: 'button', "class":"btn btn-sm", html: name, "data-variable": name})
             .addClass('btn-var-'+name)
             .addClass('var-type-'+variable.type);
 
@@ -197,6 +197,16 @@ $(function() {
     $("[id='"+data.body.name+"']").html(result);
   }
 
+  function dump_variable(event){
+    console.log('dump_variable(): click event:',event);
+    var id=event.target.dataset.variable;
+    var device_var = device_vars[id]
+    var htmlstr='<div class="text_variable">Variable '+id+': ' +
+                device_var.value +
+                ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
+    terminal_print(htmlstr);
+  }
+
   function subscribe_events(){
     return particle.getEventStream({deviceId: current_device,auth: access_token});
   }
@@ -238,8 +248,7 @@ $(function() {
       }
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
       htmlstr='<div class="'+event_class+'">'+prestr+htmlstr+poststr+'</div>';
-      $("#content").append(htmlstr);
-      $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+      terminal_print(htmlstr);
     });
   }
 
@@ -255,19 +264,9 @@ $(function() {
     send_cmd("user mode");
   });
 
-  function send_cmd(cmd){
-    console.log("Sending Command: " + cmd);
-    particle.publishEvent({name:'oak/device/reset',data: cmd,isPrivate: true,auth: access_token});
-  }
-
   $("#send").click(function(){
     send_data($("#senddata").val());
   });
-
-  function send_data(data){
-    console.log("Sending Data: " + data);
-    particle.publishEvent({name:'oak/device/stdin',data: data,isPrivate: true,auth: access_token});
-  }
 
   $("#logout").click(function(){
     localStorage.removeItem("access_token");
@@ -281,6 +280,8 @@ $(function() {
       .then(update_devinfo);
   });
 
+  $(document).on('click', '#varstable [data-variable]', dump_variable);
+
   $("#deviceIDs").on('change',function(){
     current_device=this.value;
     get_devinfo()
@@ -288,6 +289,38 @@ $(function() {
       .then(subscribe_events)
       .then(display_event);
   });
+
+  $('#sidebar').hover(function(){
+    $('body').css('overflow', 'hidden');
+  }, function(){
+    $('body').css('overflow', 'auto')
+  });
+
+  $('#show-sidebar').on('click touch', function(e){
+    e.preventDefault();
+    $('.fixed-sidebar').toggleClass('open');
+  });
+
+  $('#file-btn').click(function(){
+    $('#file-input').click();
+  });
+
+  $('#settings input, #settings select').on('change', save_settings);
+
+  function terminal_print(content){
+    $("#content").append(content);
+    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+  }
+
+  function send_cmd(cmd){
+    console.log("Sending Command: " + cmd);
+    particle.publishEvent({name:'oak/device/reset',data: cmd,isPrivate: true,auth: access_token});
+  }
+
+  function send_data(data){
+    console.log("Sending Data: " + data);
+    particle.publishEvent({name:'oak/device/stdin',data: data,isPrivate: true,auth: access_token});
+  }
 
   function start_pollers(){
     return new Promise(function(resolve, reject){
@@ -309,23 +342,6 @@ $(function() {
       resolve();
     });
   }
-
-  $('#sidebar').hover(function(){
-    $('body').css('overflow', 'hidden');
-  }, function(){
-    $('body').css('overflow', 'auto')
-  });
-
-  $('#show-sidebar').on('click touch', function(e){
-    e.preventDefault();
-    $('.fixed-sidebar').toggleClass('open');
-  });
-
-  $('#file-btn').click(function(){
-    $('#file-input').click();
-  });
-
-  $('#settings input, #settings select').on('change', save_settings);
 
   function save_settings(){
     var newSettings = $('#settings').serializeArray();

@@ -61,9 +61,6 @@ body::-webkit-scrollbar,
   overflow-y:scroll;
   z-index: 1;
 }
-.fixed-sidebar .form-control{
-  max-width:90%;
-}
 .file-custom{
   background-color: #434857;
   border: 1px solid #434857;
@@ -73,12 +70,14 @@ body::-webkit-scrollbar,
   content: "Upload File..."
 }
 .navbar label{ margin:0;}
-
 .centered{
   text-align: center;
 }
-
 #footer .form-group.row{ margin:0;}
+table{ background-color: transparent;}
+table td, table th{color: #cfd2da; }
+.table td{ border-color: #434857; }
+.table thead th{ border-top:0px none; border-color: #434857; }
 
 /* Access Control */
 #login{ display: none; padding-top:30px; }
@@ -137,11 +136,15 @@ body::-webkit-scrollbar,
 }
 
 /* Sidebar and Controls */
+#sidebar .form-group{
+  margin-bottom:2em;
+}
 #show-sidebar{
   color:#fff;
   font-size:2rem;
   z-index: 1;
 }
+
 #devstatus .label{ display: none; }
 #devstatus[data-status="true"] .online{ display: inline;}
 #devstatus[data-status="false"] .offline{ display: inline;}

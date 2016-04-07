@@ -86,9 +86,9 @@
       </nav>
 
       <div class="container-fluid">
-        <div id="sidebar" class="col-md-3 fixed-sidebar" >
+        <div id="sidebar" class="col-md-3 fixed-sidebar">
           <fieldset class="form-group">
-            <label for="deviceIDs">Device: </label>
+            <label for="deviceIDs"><h5>Device:</h5> </label>
             <span id="devstatus" data-status="false">
               <span class="label online label-success">online</span>
               <span class="label offline label-danger">offline</span>
@@ -98,19 +98,19 @@
             </select>
           </fieldset>
 
-          <label for="varstable">Variables</label>
-          <table class="table table-inverse" id="varstable">
+          <label for="varstable"><h5>Variables</h5></label>
+          <table class="table" id="varstable">
             <thead><tr>
               <th>Name</th>
               <th>Value</th>
             </tr></thead>
-            <tbody id="varstbody"><tr>
-              <td colspan="2" class="centered"><i>None exposed by firmware</i></td>
-            </tr></tbody>
+            <tbody id="varstbody">
+              <tr><td colspan="2" class="centered"><i>None exposed by firmware</i></td></tr>
+            </tbody>
           </table>
 
           <fieldset class="form-group">
-            <label for="funcs">Functions</label>
+            <label for="funcs"><h5>Functions</h5></label>
             <select id="funcs" class="form-control">
               <option>--</option>
             </select>
