@@ -259,7 +259,13 @@ $(function() {
     });
   }
 
-  $("#reboot").click(function(){
+  $("#reboot-all").click(function(e){
+    e.preventDefault();
+    send_cmd("reboot");
+  });
+
+  $("#reboot-current").click(function(e){
+    e.preventDefault();
     send_cmd("reboot");
   });
 
