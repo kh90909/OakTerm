@@ -105,12 +105,18 @@
             </tr></tbody>
           </table>
 
-          <fieldset class="form-group">
-            <label for="funcs">Functions</label>
-            <select id="funcs" class="form-control">
-              <option>None registered</option>
-            </select>
-          </fieldset>
+          <label for="funcstable">Functions</label>
+          <table class="table table-inverse" id="funcstable">
+            <tbody id="funcstbody">
+            </tbody>
+          </table>
+        </div>
+
+        <div id="funcpopovercontent" class="hide">
+          <div class="row">
+            <label for="func-arg">int PLACEHOLDER(&nbsp;</label><input type="text" id="PLACEHOLDER-arg"><label>&nbsp;)</label>
+            <button id="PLACEHOLDER" type="button" class="btn btn-primary">Call</button>
+          </div>
         </div>
 
         <div id="content" class="col-md-9 col-md-push-3">

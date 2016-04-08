@@ -135,7 +135,8 @@ td.var-value{
 .text_sentevent { color: #f0ad4e; }
 .text_variable  { color: #5bc0de; }
 .text_function  { color: #5cb85c; }
-
+.popover-content{ color: #000000 !important; }
+.popover-title{ display: none; }
 .var_int32 { color: #DCDC00; }
 .var_double { color: #f0ad4e; }
 .var_string { color: #5cb85c; }

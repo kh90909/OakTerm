@@ -9,6 +9,7 @@ $(function() {
   var device_vartypes = {};
   var device_varclasses = {'int32': 'var_int32', 'double': 'var_double', 'string': 'var_string'};
   var settings = get_settings();
+  var device_functions = [];
 
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
@@ -153,17 +154,72 @@ $(function() {
       }
     });
 
-    $("#funcs").html('');
-    _.each(data.body.functions, function(item, idx) {
-      $("#funcs").append('<option id="'+item+'">'+item+'</option>');
-    });
+    if(_.isEmpty(data.body.functions)){
+       $("#funcstbody").html('<tr><td class="centered"><i>None exposed by firmware</i></td></tr>');
+    } else{
+      device_functions = _.filter(device_functions,function(item) {
+          if( $.inArray(item,data.body.functions)>-1) {
+            return true;
+          } else {
+            $('tr[id="'+item+'-row"]').remove();
+            return false;
+          }
+      });
+
+      _.each(data.body.functions, function(item, idx) {
+        if( $.inArray(item,device_functions)<0) {
+          var trtemplate='data-placement="top" data-container="body"><td>int ';
+          $("#funcstbody").append('<tr id="'+item+'-row" '+trtemplate+item+'(String arg)</td></tr>');
+
+          $('[id="'+item+'-row"]').popover({
+            html : true,
+            content: function() {
+              return $("#funcpopovercontent").html().replace(/PLACEHOLDER/g,item);
+            }
+          }).on('shown.bs.popover', function() {
+            $('body').find('input[id="'+item+'-arg"]').focus();
+          });
+
+          console.log('Setting up click handler on selector:','button[id="'+item+'"]');
+          $(document).on('click','button[id="'+item+'"]',call_function);
+          $(document).on('keypress','input[id="'+item+'-arg"]',function(event) {
+            if(event.which == 13) {
+              console.log('Got enter');
+              $('body').find('button[id="'+item+'"]').trigger("click");
+            }
+          });
+        }
+      });
+
+      device_functions = $.extend(true,device_functions,data.body.functions);
+    }
+  }
+
+  function call_function(event){
+        var name=this.id
+        var argval=$('[id="'+this.id+'-arg"]').val();
+        console.log('Call button in popover clicked. name =',name,'arg =',argval);
+        particle.callFunction({deviceId: current_device,
+                               name: name,
+                               argument: argval,
+                               auth: access_token})
+          .then(function(data){ dump_function(name,argval,data.body.return_value); });
+        console.log(this);
+        $('tr[id="'+name+'-row"]').popover('hide');
+  }
+
+  function dump_function(func,arg,result){
+    var htmlstr='<div class="text_function">Function call '+func+'("' +
+                arg+'") returned '+result+'</div>';
+    $("#content").append(htmlstr);
+    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
   }
 
   function get_variables(){
     console.log('get_variables()');
     _.each(device_vars, function(value, key) {
       particle.getVariable({deviceId: current_device, name: key, auth: access_token})
-        .then(update_variable)
+        .then(update_variable);
     });
   }
 
