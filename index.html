@@ -120,14 +120,16 @@
               </div>
             </div>
           <div class="collapse" id="device-details">
-            <table class="table compact" id="devtable">
-              <tfoot><tr><td></td><td class="align-right">
-                <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modal-rename-device">
-                  Rename <i class="fa fa-pencil"></i>
-                </button>
-              </td></tr></tfoot>
-              <tbody></tbody>
-            </table>
+            <div class="wrap">
+              <table class="table compact" id="devtable">
+                <tfoot><tr><td></td><td class="align-right">
+                  <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modal-rename-device">
+                    Rename <i class="fa fa-pencil"></i>
+                  </button>
+                </td></tr></tfoot>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
           </fieldset>
 
@@ -141,11 +143,13 @@
               </div>
             </div>
             <div class="collapse" id="var-details">
-              <table class="table compact" id="varstable">
-                <tbody id="varstbody">
-                  <tr><td colspan="2" class="centered"><em>None exposed by firmware</em></td></tr>
-                </tbody>
-              </table>
+              <div class="wrap">
+                <table class="table compact" id="varstable">
+                  <tbody id="varstbody">
+                    <tr><td colspan="2" class="centered"><em>None exposed by firmware</em></td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </fieldset>
 
@@ -159,9 +163,11 @@
               </div>
             </div>
             <div class="collapse" id="func-details">
-            <select id="funcs" class="form-control">
-              <option>--</option>
-            </select>
+              <div class="wrap">
+                <select id="funcs" class="form-control">
+                  <option>--</option>
+                </select>
+              </div>
           </fieldset>
         </div>
 
