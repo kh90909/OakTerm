@@ -337,7 +337,7 @@ $(function() {
   });
 
   function toggle_arrow(e){
-    $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-down fa-angle-right');
+    $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-up fa-angle-down');
   }
 
   function terminal_print(content){
