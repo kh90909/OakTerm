@@ -156,10 +156,30 @@ table.compact td{
   z-index: 1;
 }
 #sidebar table{ margin-bottom:2em;}
-.form-group.device-select{ margin-bottom:5px; }
 #devstatus .label{ display: none; }
 #devstatus[data-status="true"] .online{ display: inline;}
 #devstatus[data-status="false"] .offline{ display: inline;}
+
+.sidebar-category-header{
+    display: table;
+}
+
+.sidebar-category-header-element{
+    display: table-cell;
+    vertical-align: middle;
+}
+
+div.sidebar-category-header-element{
+    padding-left: 0.2em;
+}
+
+button.sidebar-category-header-element{
+    padding:1px;
+}
+
+.angle-button{
+    width:2em;
+}
 
 /* Responsive */
 @media (max-width: 768px){

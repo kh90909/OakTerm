@@ -96,7 +96,7 @@
 
       <div class="container-fluid">
         <div id="sidebar" class="col-md-3 fixed-sidebar">
-          <fieldset class="form-group device-select">
+          <fieldset class="form-group">
             <label for="deviceIDs"><h5>Device:</h5> </label>
             <span id="devstatus" data-status="false">
               <span class="label online label-success">online</span>
@@ -107,40 +107,58 @@
               <select id="deviceIDs" class="form-control">
                 <option>--</option>
               </select>
-              <button class="btn btn-sm btn-primary float-right" data-toggle="collapse" data-target="#device-details">
-              <i class="fa fa-angle-down"></i>
-            </button>
             </div>
           </fieldset>
 
           <fieldset class="form-group">
-            <div class="collapse" id="device-details">
-              <table class="table compact" id="devtable">
-                <tfoot><tr><td></td><td class="align-right">
-                  <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modal-rename-device">
-                    Rename <i class="fa fa-pencil"></i>
-                  </button>
-                </td></tr></tfoot>
-                <tbody></tbody>
+            <div class="sidebar-category-header">
+              <button class="btn btn-sm btn-primary angle-button sidebar-category-header-element" data-toggle="collapse" data-target="#device-details">
+                <i class="fa fa-angle-right"></i>
+              </button>
+              <div class="h5 sidebar-category-header-element">
+                Device info
+              </div>
+            </div>
+          <div class="collapse" id="device-details">
+            <table class="table compact" id="devtable">
+              <tfoot><tr><td></td><td class="align-right">
+                <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modal-rename-device">
+                  Rename <i class="fa fa-pencil"></i>
+                </button>
+              </td></tr></tfoot>
+              <tbody></tbody>
+            </table>
+          </div>
+          </fieldset>
+
+          <fieldset class="form-group">
+            <div class="sidebar-category-header">
+              <button class="btn btn-sm btn-primary angle-button sidebar-category-header-element" data-toggle="collapse" data-target="#var-details">
+                <i class="fa fa-angle-right"></i>
+              </button>
+              <div class="h5 sidebar-category-header-element">
+                Variables
+              </div>
+            </div>
+            <div class="collapse" id="var-details">
+              <table class="table compact" id="varstable">
+                <tbody id="varstbody">
+                  <tr><td colspan="2" class="centered"><em>None exposed by firmware</em></td></tr>
+                </tbody>
               </table>
             </div>
           </fieldset>
 
           <fieldset class="form-group">
-            <label for="varstable"><h5>Variables</h5></label>
-            <table class="table" id="varstable">
-              <thead><tr>
-                <th>Name</th>
-                <th>Value</th>
-              </tr></thead>
-              <tbody id="varstbody">
-                <tr><td colspan="2" class="centered"><em>None exposed by firmware</em></td></tr>
-              </tbody>
-            </table>
-          </fieldset>
-
-          <fieldset class="form-group">
-            <label for="funcs"><h5>Functions</h5></label>
+            <div class="sidebar-category-header">
+              <button class="btn btn-sm btn-primary angle-button sidebar-category-header-element" data-toggle="collapse" data-target="#func-details">
+                <i class="fa fa-angle-right"></i>
+              </button>
+              <div class="h5 sidebar-category-header-element">
+                Functions
+              </div>
+            </div>
+            <div class="collapse" id="func-details">
             <select id="funcs" class="form-control">
               <option>--</option>
             </select>

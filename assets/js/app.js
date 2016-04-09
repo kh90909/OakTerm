@@ -329,15 +329,15 @@ $(function() {
 
   $('#settings input, #settings select').on('change', save_settings);
 
-  $('#device-details').on('hide.bs.collapse', toggle_arrow);
-  $('#device-details').on('show.bs.collapse', toggle_arrow);
+  $('#device-details,#var-details,#func-details').on('hide.bs.collapse', toggle_arrow);
+  $('#device-details,#var-details,#func-details').on('show.bs.collapse', toggle_arrow);
 
   $('#modal-rename-device').on('show.bs.modal', function (e) {
     $('#modal-rename-device [data-bind="deviceName"]').text(current_device.name);
   });
 
   function toggle_arrow(e){
-    $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-down fa-angle-up');
+    $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-down fa-angle-right');
   }
 
   function terminal_print(content){
