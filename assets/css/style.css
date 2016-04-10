@@ -10,6 +10,8 @@
 .text_sentevent { color: #f0ad4e; }
 .text_variable  { color: #5bc0de; }
 .text_function  { color: #5cb85c; }
+.popover-content{ color: #000000 !important; }
+.popover-title{ display: none; }
 
 .var-type-bool  { background-color:#0275d8; border-color: #0275d8; }
 .var-type-int   { background-color:#f0ad4e; border-color: #f0ad4e; }
@@ -32,7 +34,7 @@ body, html{ background: #252830; color:#fff; }
 /* Bootstrap Overrides */
 body::-webkit-scrollbar,
 .fixed-sidebar::-webkit-scrollbar{ display: none }
-.form-control {
+.form-control:not(.form-control-func-arg) {
   display: block;
   width: 100%;
   height: 35px;
@@ -46,6 +48,12 @@ body::-webkit-scrollbar,
   border-radius: 4px;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
 }
+
+.form-control-func-arg {
+  color: #ffffff;
+  background-color: #434857;
+}
+
 .btn-primary-outline:focus,
 .btn-primary-outline:active{ background: transparent; }
 .form-control:focus {
@@ -168,7 +176,8 @@ table.compact td{
 #devstatus[data-status="false"] .offline{ display: inline;}
 .sidebar-category-header button{ width:31px; }
 .sidebar-category-header-element{ line-height: 1.55; cursor: pointer; margin: 0;}
-
+.func-arg-label{ float: left; margin-right: 4px;}
+a.func { color: #cfd2da;}
 
 /* Responsive */
 @media (max-width: 768px){
