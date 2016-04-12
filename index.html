@@ -163,11 +163,38 @@
               </div>
             </div>
             <div class="collapse" id="func-details">
-              <div class="wrap">
-                <select id="funcs" class="form-control">
-                  <option>--</option>
-                </select>
-              </div>
+              <table class="table table-compact" id="funcstable">
+                <tbody id="funcstbody">
+                  <tr id="row-nofuncs">
+                    <td class="centered">
+                      <i>None exposed by firmware</i>
+                    </td>
+                  </tr>
+                  <script id="func-template" type="text/html">
+                    <td>
+                      <div>
+                        <a role="button" class="func" id="{{param1}}-row" data-target="[id='func-{{param1}}']" data-toggle="collapse">
+                          int {{param1}}(String arg);
+                        </a>
+                      </div>
+                      <div id="func-{{param1}}" class="collapse">
+                        <label for="arg-{{param1}}" class="func-arg-label">
+                          &#9495;&nbsp;arg
+                        </label>
+                        <div class="input-group input-group-sm">
+                          <input type="text" id="arg-{{param1}}" class=" form-control form-control-func-arg">
+                          <span class="input-group-btn">
+                            <button id="btn-{{param1}}" type="button" class="btn btn-primary">
+                              Call
+                            </button>
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                  </script>
+                </tbody>
+              </table>
+            </div>
           </fieldset>
         </div>
 

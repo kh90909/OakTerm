@@ -7,6 +7,7 @@ $(function() {
   var current_device = {};
   var pollers = [];
   var device_vars = {};
+  var device_functions = [];
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
@@ -175,13 +176,57 @@ $(function() {
       $('#devtable tbody').append('<tr><td>'+idx+'</td><td><input class="form-control compact" value="'+val+'" /></td></tr>');
     });
 
+    device_functions = _.filter(device_functions,function(item) {
+      if( $.inArray(item,data.body.functions)>-1) {
+        return true;
+      } else {
+        $(document).off('click','[id="btn-'+item+'"]');
+        $(document).off('keypress','[id="arg-'+item+'"]');
+        $('[id="row-'+item+'"]').remove();
+        return false;
+      }
+    });
+
     if(_.isEmpty(data.body.functions)){
-      $("#funcs").html('<option>--</option>');
+      $('#row-nofuncs').show();
     } else{
+      $('#row-nofuncs').hide();
       _.each(data.body.functions, function(item, idx) {
-        $("#funcs").append('<option>', {value: item, html: item});
+        if( $.inArray(item,device_functions)<0) {
+          var $row=$('<tr>',{"id": 'row-'+item});
+          $row.html($('#func-template').html().replace(/{{param1}}/g,item));
+          $('#funcstbody').append($row);
+
+          $(document).on('shown.bs.collapse', '[id="func-'+item+'"]', function() {
+            $('body').find('[id="arg-'+item+'"]').focus();
+          });
+          $(document).on('click','[id="btn-'+item+'"]',call_function);
+          $(document).on('keypress','[id="arg-'+item+'"]',function(event) {
+            if(event.which == 13) {
+              $('body').find('[id="btn-'+item+'"]').trigger("click");
+            }
+          });
+        }
       });
+      device_functions = $.extend(true,device_functions,data.body.functions);
     }
+  }
+
+  function call_function(event){
+    var name=this.id.slice(4);
+    var arg=$('[id="arg-'+name+'"]').val();
+    particle.callFunction({deviceId: current_device.id,
+                           name: name,
+                           argument: arg,
+                           auth: access_token})
+      .then(function(data){ dump_function(name,arg,data.body.return_value); });
+    $('[id="func-'+name+'"]').collapse('hide');
+  }
+
+  function dump_function(func,arg,result){
+    var htmlstr='<div class="text_function">Function call ' +
+                func + '("' + arg + '") returned ' + result + '</div>';
+    terminal_print(htmlstr);
   }
 
   function get_variables(){
