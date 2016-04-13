@@ -35,7 +35,7 @@
       </div>
 
       <div class="col-md-4 col-md-offset-4 center">
-        <form autocomplete="on" method="POST">
+        <form id="login_form" autocomplete="on" method="POST">
           <fieldset class="form-group">
             <input name="email" type="email" class="form-control" id="login_email" placeholder="Particle Login email">
           </fieldset>
@@ -43,36 +43,52 @@
             <input name="password" type="password" class="form-control" id="login_password" placeholder="Particle Password">
           </fieldset>
 
-          <div id="login_error" style="color:red;font-weight:bold;display:none;">Invalid email or password.</div>
+          <fieldset class="form-group">
+            <button class="btn btn-primary" id="login_button">Log In</button>
+          </fieldset>
 
-          <button class="btn btn-primary" id="login_button">Log In</button>
-
+          <fieldset class="form-group">
+            <div id="login_error" class="alert alert-danger" role="alert">Invalid email or password.</div>
+          </fieldset>
         </form>
       </div>
     </div>
 
     <div id="terminal" class="clearfix">
       <nav id="header" class=" navbar-fixed-top container-fluid">
-        <div class="col-md-3">
+        <a href="#" id="show-sidebar" class="hidden-md-up col-sm-1"><i class="fa fa-bars"></i></a>
+
+        <div class="col-md-3 col-sm-4 col-xs-12 xs-center">
           <h1>OakTerm</h1>
         </div>
 
-        <form class="form-inline col-md-6">
+        <div class="col-md-4 col-sm-7 col-xs-12 sm-align-right xs-center">
           <button class="btn btn-success" id="refresh" data-toggle="tooltip" data-placement="bottom" title="Refresh">
             <i class="fa fa-refresh"></i></button>
           <button class="btn btn-secondary" id="sendevent" data-toggle="tooltip" data-placement="bottom" title="Send Event">
             <i class="fa fa-paper-plane"></i></button>
-          <button class="btn btn-danger" id="reboot" data-toggle="tooltip" data-placement="bottom" title="Reboot">
-            <i class="fa fa-power-off"></i></button>
+
+          <div class="btn-group">
+            <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="fa fa-power-off"></i>
+            </button>
+            <div class="dropdown-menu">
+              <a class="dropdown-item" href="#" id="reboot-current">Reboot current device</a>
+              <a class="dropdown-item" href="#" id="reboot-all">Reboot all devices</a>
+            </div>
+          </div>
+
           <button class="btn btn-info" id="configmode" data-toggle="tooltip" data-placement="bottom" title="Config Mode">
             <i class="fa fa-cogs"></i></button>
           <button class="btn btn-warning" id="usermode" data-toggle="tooltip" data-placement="bottom" title="User Mode">
             <i class="fa fa-user-secret"></i></button>
-        </form>
+          <button class="btn btn-default hidden-md-up" id="file-btn" data-toggle="tooltip" data-placement="bottom" title="Upload File">
+            <i class="fa fa-upload"></i></button>
+        </div>
 
-        <form class="form-inline col-md-3">
+        <form class="form-inline col-md-3 hidden-sm-down">
           <label class="file">
-            <input type="file" id="file">
+            <input type="file" id="file-input">
             <span class="file-custom"></span>
           </label>
         </form>
@@ -81,25 +97,77 @@
       <div class="container-fluid">
         <div id="sidebar" class="col-md-3 fixed-sidebar">
           <fieldset class="form-group">
-            <label for="deviceIDs">Device: </label> <span class="label label-danger" id="devstatus">offline</span>
-            <select id="deviceIDs" class="form-control">
-              <option>--</option>
-            </select>
+            <label for="deviceIDs"><h5>Device:</h5> </label>
+            <span id="devstatus" data-status="false">
+              <span class="label online label-success">online</span>
+              <span class="label offline label-danger">offline</span>
+            </span>
+
+            <div class="flex-input">
+              <select id="deviceIDs" class="form-control">
+                <option>--</option>
+              </select>
+            </div>
           </fieldset>
 
           <fieldset class="form-group">
-            <label for="vars">Variables</label>
-            <select id="vars" class="form-control">
-              <option>Select a variable</option>
-              <option>temp</option>
-            </select>
+            <div class="sidebar-category-header">
+              <button class="btn btn-sm btn-primary-outline float-right" data-toggle="collapse" data-target="#device-details">
+                <i class="fa fa-angle-down"></i>
+              </button>
+              <div class="h5 sidebar-category-header-element" data-toggle="collapse" data-target="#device-details">
+                Device info
+              </div>
+            </div>
+          <div class="collapse" id="device-details">
+            <div class="wrap">
+              <table class="table compact" id="devtable">
+                <tfoot><tr><td></td><td class="align-right">
+                  <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modal-rename-device">
+                    Rename <i class="fa fa-pencil"></i>
+                  </button>
+                </td></tr></tfoot>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
           </fieldset>
 
           <fieldset class="form-group">
-            <label for="funcs">Functions</label>
-            <select id="funcs" class="form-control">
-              <option>None registered</option>
-            </select>
+            <div class="sidebar-category-header">
+              <button class="btn btn-sm btn-primary-outline float-right " data-toggle="collapse" data-target="#var-details">
+                <i class="fa fa-angle-down"></i>
+              </button>
+              <div class="h5 sidebar-category-header-element" data-toggle="collapse" data-target="#var-details">
+                Variables
+              </div>
+            </div>
+            <div class="collapse" id="var-details">
+              <div class="wrap">
+                <table class="table compact" id="varstable">
+                  <tbody id="varstbody">
+                    <tr><td colspan="2" class="centered"><em>None exposed by firmware</em></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-group">
+            <div class="sidebar-category-header">
+              <button class="btn btn-sm btn-primary-outline float-right" data-toggle="collapse" data-target="#func-details">
+                <i class="fa fa-angle-down"></i>
+              </button>
+              <div class="h5 sidebar-category-header-element" data-toggle="collapse" data-target="#func-details">
+                Functions
+              </div>
+            </div>
+            <div class="collapse" id="func-details">
+              <div class="wrap">
+                <select id="funcs" class="form-control">
+                  <option>--</option>
+                </select>
+              </div>
           </fieldset>
         </div>
 
@@ -129,22 +197,105 @@
       </div>
 
       <footer id="footer" class="container-fluid">
-        <div class="col-md-9">
-          <input type="text" class="form-control" id="senddata" placeholder="Send Data">
+        <div class="col-md-10">
+          <div class="flex-input">
+            <input type="text" class="form-control" id="senddata" placeholder="Send Data">
+            <button id="send" type="submit" class="btn btn-success hidden-sm-down"><i class="fa fa-paper-plane"></i> Send Data</button>
+          </div>
         </div>
 
-        <div class="col-sm-1">
-          <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
-        </div>
-
-        <div class="col-md-2 align-right">
-          <button class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Settings">
+        <div class="col-md-2 col-xs-6 align-right sm-align-left">
+          <button class="btn btn-info"  data-toggle="modal" data-target="#modal-settings">
             <i class="fa fa-cog"></i></button>
           <button class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">
             <i class="fa fa-sign-out"></i></button>
         </div>
+
+        <div class="col-xs-6 hidden-md-up align-right">
+          <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
+        </div>
+
       </footer><!-- #footer -->
     </div><!-- #terminal -->
+
+    <div class="modal fade" id="modal-settings">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">OakTerm Settings</h4>
+          </div>
+          <div class="modal-body">
+            <form id="settings">
+              <div class="form-group row">
+                <label for="autoscroll" class="col-sm-3 form-control-label">Auto-Scroll</label>
+                <div class="col-sm-9">
+                  <select name="autoscroll" id="autoscroll" class="form-control">
+                    <option value="pageBtm">When at page bottom</option>
+                    <option value="onEvent">When new events arrive</option>
+                    <option value="none">Never</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label for="lineends" class="col-sm-3 form-control-label">Line Endings</label>
+                <div class="col-sm-9">
+                  <select name="lineends" id="lineends" class="form-control">
+                    <option value="r">\r</option>
+                    <option value="n">\n</option>
+                    <option value="rn">\r\n</option>
+                    <option value="none">none</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label for="subenter" class="col-sm-3 form-control-label">Submit on Enter</label>
+                <div class="col-sm-9">
+                  <div class="c-inputs-stacked">
+                    <label class="c-input c-radio">
+                      <input id="subenter-on" name="subenter" type="radio" value="true">
+                      <span class="c-indicator"></span> Enabled
+                    </label>
+                    <label class="c-input c-radio">
+                      <input id="subenter-off" name="subenter" type="radio" value="false">
+                      <span class="c-indicator"></span> Disabled
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="modal-rename-device">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Rename Device: <span data-bind="deviceName"></span></h4>
+          </div>
+          <div class="modal-body">
+            <form id="rename-device">
+              <div class="form-group">
+                <label for="newname">New Name</label>
+                <div class="flex-input">
+                  <input type="text" class="form-control" placeholder="new device name" />
+                  <button id="rename_device" type="button" class="btn btn-danger">Rename Device</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
   </body>
 </html>

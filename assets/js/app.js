@@ -1,11 +1,13 @@
 $(function() {
-  var device_list_refresh_interval=60; // seconds
+  var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
-  var access_token = "";
   var claim_code = "";
   var claimed_devices = "";
-  var current_device = "";
-
+  var all_devices;
+  var current_device = {};
+  var pollers = [];
+  var device_vars = {};
+  var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
 
@@ -22,25 +24,31 @@ $(function() {
     }
   });
 
-  do_login();
+  do_login(true);
 
-  function do_login(){
-    login()
+  function do_login(firstRun){
+    login(firstRun)
+      .then(restore_settings)
+      .then(show_terminal)
       .then(get_devices)
       .then(update_devices)
       .then(get_devinfo)
       .then(update_devinfo)
+      .then(start_pollers)
+      .then(get_variables)
       .then(subscribe_events)
       .then(display_event)
       .catch(function(err){ console.warn('Error: ', err); });
   }
 
-  function login(){
+  function login(firstRun){
+    $('#login_error').hide();
+
     if(!access_token){
       var email = $('#login_email').val();
       var pass = $('#login_password').val();
 
-      if(email && pass){
+      if(!firstRun){
         return particle.login({
           username: email,
           password: pass
@@ -58,6 +66,7 @@ $(function() {
       $('#terminal').fadeOut(150, function(){
         $('#login').fadeIn(150, set_heights);
         if( rejectMsg) reject(rejectMsg);
+        else resolve();
       });
     });
   }
@@ -74,23 +83,22 @@ $(function() {
   function login_success(data){
     $('#login_button').attr('disabled',false);
     $('#login_error').hide();
-    $('#login_email').val("");
-    $('#login_password').val("");
 
     if(data.body.access_token){
       access_token = data.body.access_token;
       localStorage.setItem("access_token", access_token);
     }
-
-    show_terminal();
-    get_devices();
   }
 
   function login_err(err){
     $('#login_button').attr('disabled',false);
-    $('#login_password').val("");
-    $('#login_error').html(err.errorDescription);
+    $('#login_error').html(err.errorDescription.split(' - ')[1]);
     $('#login_error').show();
+
+    if(err.body.error == 'invalid_token'){
+      localStorage.removeItem("access_token");
+    }
+
     show_login();
   }
 
@@ -100,39 +108,114 @@ $(function() {
 
   function update_devices(devices){
     console.log('Devices: ', devices);
+    all_devices = devices.body;
     $("#deviceIDs").html('');
+
     _.each(devices.body, function(item, idx) {
-      $("#deviceIDs").append('<option id="'+item.id+'">'+item.id+'</option>');
+      var name = "";
+      if(item.name) name += item.name+' ';
+      name += '('+item.id.slice(-6)+')';
+
+      var curId = current_device ? current_device.id : false;
+      var $opt = $('<option>', {value: item.id, selected: (curId == item.id), html: name });
+      $("#deviceIDs").append($opt);
     });
-    current_device=$("#deviceIDs").val()
+
+    current_device = _.findWhere(all_devices, {id: $("#deviceIDs").val()} );
+    if( current_device){
+      localStorage.setItem("current_device", JSON.stringify(current_device));
+    }
   }
 
   function get_devinfo(){
-    return particle.getDevice({deviceId: current_device,auth: access_token})
+    return particle.getDevice({deviceId: current_device.id, auth: access_token});
   }
 
   function update_devinfo(data){
-    if(data.body.connected){
-      $("#devstatus").html('online');
-    }
-    else{
-      $("#devstatus").html('offline');
-    }
-    console.log('update_devinfo(): connected='+data.body.connected);
-    console.log('update_devinfo(): variables='+data.body.variables);
-    console.log('update_devinfo(): functions='+data.body.functions);
+    $("#devstatus").attr('data-status', data.body.connected);
 
-    _.each(data.body.variables, function(item, idx) {
-      $("#vars").append('<option id="'+item.name+'">'+item.name+'</option>');
+    if(_.isEmpty(data.body.variables)){
+      $("#varstbody").html('<td colspan="2" class="centered"><i>None exposed by firmware</i></td>');
+    } else{
+      var new_vars = _.mapObject(data.body.variables, function(item, key){
+        return { type: item }
+      });
+
+      // remove missing device_vars, merge in from new_vars
+      _.each(device_vars, function(variable, name){
+        if( !new_vars[name]) delete device_vars[name];
+        $('#name').parents('tr').remove();
+      });
+
+      device_vars = $.extend(true, device_vars, new_vars)
+
+      $("#varstbody").html('');
+      _.each(device_vars, function(variable, name) {
+          var $row = $('<tr>');
+          var $var = $('<td>', {"data-variable": name, html: (typeof variable.value == 'undefined') ? '?' : variable.value.toString() });
+          var $btn = $('<button>', {type: 'button', "class":"btn btn-sm", html: name, "data-variable": name})
+            .addClass('btn-var-'+name)
+            .addClass('var-type-'+variable.type);
+
+          $row
+            .append( $('<td>').append($btn) )
+            .append($var);
+
+          $("#varstbody").append($row);
+
+          $('.btn-var-'+name).tooltip({
+            placement: 'right',
+            title: variable.type
+          });
+      });
+    }
+
+    $('#devtable tbody').html('');
+    _.each(_.pick(data.body, 'id', 'last_heard', 'last_ip_address'), function(val, idx){
+      $('#devtable tbody').append('<tr><td>'+idx+'</td><td><input class="form-control compact" value="'+val+'" /></td></tr>');
     });
-    $("#funcs").html('');
-    _.each(data.body.functions, function(item, idx) {
-      $("#funcs").append('<option id="'+item+'">'+item+'</option>');
+
+    if(_.isEmpty(data.body.functions)){
+      $("#funcs").html('<option>--</option>');
+    } else{
+      _.each(data.body.functions, function(item, idx) {
+        $("#funcs").append('<option>', {value: item, html: item});
+      });
+    }
+  }
+
+  function get_variables(){
+    _.each(device_vars, function(variable, name) {
+      particle.getVariable({deviceId: current_device.id, name: name, auth: access_token})
+        .then(update_variable)
     });
   }
 
+  function update_variable(data){
+    device_vars[data.body.name].value = data.body.result;
+    var localVar = device_vars[data.body.name];
+    var result = "";
+
+    if((localVar.type == 'double') && (data.body.result == null)){
+      result = 'NaN/Inf';
+    } else{
+      result = data.body.result.toString();
+    }
+
+    $("[id='"+data.body.name+"']").html(result);
+  }
+
+  function dump_variable(event){
+    var id=event.target.dataset.variable;
+    var device_var = device_vars[id]
+    var htmlstr='<div class="text_variable">Variable '+id+': ' +
+                device_var.value +
+                ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
+    terminal_print(htmlstr);
+  }
+
   function subscribe_events(){
-    return particle.getEventStream({deviceId: current_device,auth: access_token});
+    return particle.getEventStream({deviceId: current_device.id,auth: access_token});
   }
 
   function display_event(stream){
@@ -172,12 +255,17 @@ $(function() {
       }
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
       htmlstr='<div class="'+event_class+'">'+prestr+htmlstr+poststr+'</div>';
-      $("#content").append(htmlstr);
-      $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+      terminal_print(htmlstr);
     });
   }
 
-  $("#reboot").click(function(){
+  $("#reboot-all").click(function(e){
+    e.preventDefault();
+    send_cmd("reboot");
+  });
+
+  $("#reboot-current").click(function(e){
+    e.preventDefault();
     send_cmd("reboot");
   });
 
@@ -189,22 +277,13 @@ $(function() {
     send_cmd("user mode");
   });
 
-  function send_cmd(cmd){
-    console.log("Sending Command: " + cmd);
-    particle.publishEvent({name:'oak/device/reset/'+current_device,data: cmd,isPrivate: true,auth: access_token});
-  }
-
   $("#send").click(function(){
     send_data($("#senddata").val());
   });
 
-  function send_data(data){
-    console.log("Sending Data: " + data);
-    particle.publishEvent({name:'oak/device/stdin/'+current_device,data: data,isPrivate: true,auth: access_token});
-  }
-
   $("#logout").click(function(){
     localStorage.removeItem("access_token");
+    localStorage.removeItem("current_device");
     location.reload();
   });
 
@@ -215,23 +294,143 @@ $(function() {
       .then(update_devinfo);
   });
 
+  $(document).on('click', '#varstable [data-variable]', dump_variable);
+
   $("#deviceIDs").on('change',function(){
-    current_device=this.value
+    current_device= _.findWhere(all_devices, {id: this.value});
+    localStorage.setItem("current_device", JSON.stringify(current_device));
+
+    $('#devtable tbody').html('');
     get_devinfo()
-      .then(update_devinfo);
+      .then(update_devinfo)
+      .then(subscribe_events)
+      .then(display_event);
   });
 
-  setInterval(function(){
-    console.log('Update device list timer');
-    get_devices()
-      .then(update_devices);
-    },device_list_refresh_interval*1000);
+  $('#sidebar').hover(function(){
+    $('body').css('overflow', 'hidden');
+  }, function(){
+    $('body').css('overflow', 'auto')
+  });
 
-  setInterval(function(){
-    console.log('Update device info timer');
-    get_devinfo()
-      .then(update_devinfo);
-    },device_info_refresh_interval*1000);
+  $('#show-sidebar').on('click touch', function(e){
+    e.preventDefault();
+    $('.fixed-sidebar').toggleClass('open');
+  });
+
+  $('#content').on('click touch', function(){
+    if( $('#sidebar').hasClass('open'))
+      $('.fixed-sidebar').toggleClass('open');
+  });
+
+  $('#file-btn').click(function(){
+    $('#file-input').click();
+  });
+
+  $('#settings input, #settings select').on('change', save_settings);
+
+  $('#device-details,#var-details,#func-details').on('hide.bs.collapse', toggle_arrow);
+  $('#device-details,#var-details,#func-details').on('show.bs.collapse', toggle_arrow);
+
+  $('#modal-rename-device').on('show.bs.modal', function (e) {
+    $('#modal-rename-device [data-bind="deviceName"]').text(current_device.name);
+  });
+
+  function toggle_arrow(e){
+    $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-up fa-angle-down');
+  }
+
+  function terminal_print(content){
+    $("#content").append(content);
+    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+  }
+
+  function send_cmd(cmd){
+    console.log("Sending Command: " + cmd);
+    particle.publishEvent({name: 'oak/device/reset/' + current_device.id, data: cmd,isPrivate: true, auth: access_token});
+  }
+
+  function send_data(data){
+    console.log("Sending Data: " + data);
+    particle.publishEvent({name: 'oak/device/stdin/' + current_device.id, data: data,isPrivate: true, auth: access_token});
+  }
+
+  function start_pollers(){
+    return new Promise(function(resolve, reject){
+      if( pollers.update_devices) clearTimeout( pollers.update_devices);
+      pollers['update_devices'] = setInterval(function(){
+        console.log('Update device list timer');
+        get_devices()
+          .then(update_devices);
+        },device_list_refresh_interval*1000);
+
+      if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
+      pollers['update_devinfo'] = setInterval(function(){
+        console.log('Update device info timer');
+        get_devinfo()
+          .then(update_devinfo)
+          .then(get_variables);
+        },device_info_refresh_interval*1000);
+
+      resolve();
+    });
+  }
+
+  function save_settings(){
+    var newSettings = $('#settings').serializeArray();
+    localStorage.setItem("settings", JSON.stringify(newSettings));
+    console.log( 'Saved settings:', newSettings);
+  }
+
+  function get_settings(){
+    var new_settings;
+    var saved_settings = localStorage.getItem("settings");
+    var defaults = [
+      {"name":"autoscroll","value":"onEvent"},
+      {"name":"lineends","value":"rn"},
+      {"name":"subenter","value":"true"}
+    ];
+
+    if(saved_settings){
+      try{
+        JSON.parse(saved_settings);
+        new_settings = _.extend(defaults, JSON.parse(saved_settings) );
+      } catch(e){
+        console.warn('Error: invalid localStorage settings JSON');
+        new_settings = defaults;
+      }
+    } else{
+      new_settings = defaults;
+      save_settings();
+    }
+
+    return new_settings;
+  }
+
+  function restore_settings(){
+    // App settings
+    try{
+      current_device = JSON.parse(localStorage.getItem("current_device"));
+    } catch(e){
+      current_device = null;
+    }
+
+    // User settings modal
+    _.each(settings, function(item){
+      var $item = $('[name="'+item.name+'"]');
+
+      if($item.attr('type') == 'radio'){
+        $item.each(function(){
+          if( $(this).val() == item.value){
+            $(this).prop('checked', 'checked');
+          }
+        });
+      } else{
+        $item.val(item.value);
+      }
+    });
+  }
+
 });
 
 function set_heights(){
@@ -239,6 +438,11 @@ function set_heights(){
   var footerHeight = $("#footer").outerHeight(true);
   $("#content").css('padding-top', headerHeight+10);
   $("#content").css('padding-bottom', footerHeight+10);
+
+  if($(window).width() < 768){
+    $('.fixed-sidebar').css('padding-top', headerHeight+10)
+    $('.fixed-sidebar').css('padding-bottom', footerHeight+10)
+  }
 }
 
 $(window).resize(set_heights);
