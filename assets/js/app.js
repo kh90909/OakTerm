@@ -392,12 +392,12 @@ $(function() {
 
   function send_cmd(cmd){
     console.log("Sending Command: " + cmd);
-    particle.publishEvent({name:'oak/device/reset',data: cmd,isPrivate: true,auth: access_token});
+    particle.publishEvent({name: 'oak/device/reset/' + current_device.id, data: cmd, isPrivate: true, auth: access_token});
   }
 
   function send_data(data){
     console.log("Sending Data: " + data);
-    particle.publishEvent({name:'oak/device/stdin',data: data,isPrivate: true,auth: access_token});
+    particle.publishEvent({name: 'oak/device/stdin/' + current_device.id, data: data, isPrivate: true, auth: access_token});
   }
 
   function start_pollers(){
