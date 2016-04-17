@@ -11,6 +11,7 @@ $(function() {
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
   var particle = new Particle();
+  var activeStream;
 
   $('[data-toggle="tooltip"]').tooltip();
 
@@ -266,8 +267,11 @@ $(function() {
   }
 
   function display_event(stream){
-    stream.on('event', function(event) {
-      //console.log("Event: " + event);
+    activeStream = stream;
+    activeStream.active = true;
+
+    activeStream.on('event', function(event) {
+
       var event_class="";
       switch(event.name){
         case 'oak/devices/stderr': // Typo in OakSystem.ino
@@ -379,6 +383,13 @@ $(function() {
     current_device= _.findWhere(all_devices, {id: this.value});
     localStorage.setItem("current_device", JSON.stringify(current_device));
 
+    if( activeStream && activeStream.active ){
+      stop_stream();
+    }
+
+    var htmlStr = '<div class="device-change">Device change: '+current_device.name+'</div>';
+    terminal_print(htmlStr);
+
     $('#devtable tbody').html('');
     get_devinfo()
       .then(update_devinfo)
@@ -432,6 +443,14 @@ $(function() {
       });
     }
   });
+
+  function stop_stream(stream){
+    if(!stream) stream = activeStream;
+    stream.abort();
+    $('[data-stream-active]').attr('data-stream-active', false);
+    activeStream = null;
+    return activeStream;
+  }
 
   function toggle_arrow(e){
     $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-up fa-angle-down');
