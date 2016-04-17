@@ -358,6 +358,10 @@ $(function() {
       .catch(dump_send_event_err);
   });
 
+  $('.file-input-hidden > button').on('click', function(){
+    $(this).parent().find('[type="file"]').click();
+  });
+
   function dump_sent_event(data) {
     delete data.event['auth'];
     var htmlstr='<div class="text_sentevent">Sent event: ' +
@@ -405,6 +409,51 @@ $(function() {
   $('#file-btn').click(function(){
     $('#file-input').click();
   });
+
+  $('#file-input').on('change',send_file);
+
+  function send_file(e){
+    console.log('send_file(e): e:',e);
+    if(e.target.files && e.target.files[0]){
+      var file = e.target.files[0];
+      var offset = 0;
+      var slice_len = 255;
+
+      // Disable user "Send Data" button so that it's not possible to send
+      // in the middle of the file upload
+      $("#send").addClass('disabled');
+      slice_reader();
+
+      function slice_reader(){
+        var reader = new FileReader();
+        var slice = file.slice(offset,offset+slice_len);
+
+        reader.onload = read_handler;
+        reader.onerror = error_handler;
+        reader.readAsBinaryString(slice);
+      };
+
+      function read_handler(e){
+        send_data(e.target.result);
+        offset+=slice_len;
+        if(offset >= file.size){
+          reset_ui();
+          return;
+        }
+        setTimeout(slice_reader,1000);
+      }
+
+      function error_handler(e){
+          console.log('Error reading file: ' + e.target.error);
+          reset_ui();
+      }
+
+      function reset_ui(){
+          $('#file-input').val(null);
+          $("#send").removeClass('disabled');
+      }
+    }
+  }
 
   $('#settings input, #settings select').on('change', save_settings);
 
