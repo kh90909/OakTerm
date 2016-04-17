@@ -43,7 +43,6 @@ body::-webkit-scrollbar,
   line-height: 1.5;
   color: #ffffff;
   background-color: #434857;
-  background-image: none;
   border: 1px solid #434857;
   border-radius: 4px;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
@@ -150,7 +149,7 @@ table.compact td{
   color:#373a3c;
 }
 .modal .form-control{
-  background: #f1f1f1;
+  background-color: #f1f1f1;
   color:#373a3c;
   border-color:#bbbbbb;
   box-shadow: none;
@@ -158,7 +157,8 @@ table.compact td{
 .modal .form-control:focus{
   border-color:#373a3c;
 }
-
+.modal .has-danger .form-control{ border-color:#d9534f; }
+.modal .has-warning .form-control{ border-color:#f0ad4e; }
 /* Sidebar and Controls */
 #show-sidebar{
   color:#fff;
