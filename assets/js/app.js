@@ -30,7 +30,6 @@ $(function() {
   function do_login(firstRun){
     login(firstRun)
       .then(restore_settings)
-      .then(show_terminal)
       .then(get_devices)
       .then(update_devices)
       .then(get_devinfo)
@@ -89,6 +88,8 @@ $(function() {
       access_token = data.body.access_token;
       localStorage.setItem("access_token", access_token);
     }
+
+    return show_terminal();
   }
 
   function login_err(err){
@@ -100,7 +101,7 @@ $(function() {
       localStorage.removeItem("access_token");
     }
 
-    show_login();
+    return show_login();
   }
 
   function get_devices(){
@@ -110,9 +111,10 @@ $(function() {
   function update_devices(devices){
     console.log('Devices: ', devices);
     all_devices = devices.body;
+
     $("#deviceIDs").html('');
 
-    _.each(devices.body, function(item, idx) {
+    _.each(all_devices, function(item, idx) {
       var name = "";
       if(item.name) name += item.name+' ';
       name += '('+item.id.slice(-6)+')';
@@ -413,6 +415,24 @@ $(function() {
     $('#modal-rename-device [data-bind="deviceName"]').text(current_device.name);
   });
 
+  $('#rename-device').on('submit', function(e){
+    e.preventDefault();
+    var $modal = $(this).parents('.modal');
+    var newName = $modal.find('input').val();
+
+    if( newName == ""){
+      $modal.find('.form-group').addClass('has-danger');
+      $modal.find('input').addClass('form-control-danger');
+      return;
+    } else{
+      $modal.find('.form-group').removeClass('has-danger');
+      $modal.find('input').removeClass('form-control-danger');
+      rename_device(newName).then(function(){
+        $modal.modal('hide');
+      });
+    }
+  });
+
   function toggle_arrow(e){
     $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-up fa-angle-down');
   }
@@ -430,6 +450,22 @@ $(function() {
   function send_data(data){
     console.log("Sending Data: " + data);
     particle.publishEvent({name: 'oak/device/stdin/' + current_device.id, data: data, isPrivate: true, auth: access_token});
+  }
+
+  function rename_device(newName){
+    var oldName = current_device.name;
+    return particle.renameDevice({deviceId: current_device.id, name: newName, auth: access_token })
+      .then(function(device){
+        // The rest of the chain expects an array of devices
+        newName = device.body.name;
+        device.body = [device.body];
+        return device;
+      })
+      .then(update_devices)
+      .then(function(device){
+        var htmlstr='<div class="rename">Device Rename: '+oldName+' to '+newName+'</div>';
+        terminal_print(htmlstr);
+      })
   }
 
   function start_pollers(){

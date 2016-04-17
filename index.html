@@ -35,7 +35,7 @@
       </div>
 
       <div class="col-md-4 col-md-offset-4 center">
-        <form id="login_form" autocomplete="on" method="POST">
+        <form id="login_form" autocomplete="on" method="POST" data-action="do_login">
           <fieldset class="form-group">
             <input name="email" type="email" class="form-control" id="login_email" placeholder="Particle Login email">
           </fieldset>
@@ -356,25 +356,23 @@
 
     <div class="modal fade" id="modal-rename-device">
       <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title">Rename Device: <span data-bind="deviceName"></span></h4>
-          </div>
-          <div class="modal-body">
-            <form id="rename-device">
+        <form id="rename-device">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title">Rename Device: <span data-bind="deviceName"></span></h4>
+            </div>
+            <div class="modal-body">
               <div class="form-group">
                 <label for="newname">New Name</label>
-                <div class="flex-input">
-                  <input type="text" class="form-control" placeholder="new device name" />
-                  <button id="rename_device" type="button" class="btn btn-danger">Rename Device</button>
-                </div>
+                <input id="newname" type="text" class="form-control" placeholder="new device name" />
               </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-          </div>
-        </div><!-- /.modal-content -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn" data-dismiss="modal">Cancel</button>
+              <button id="rename_device" type="submit" class="btn btn-danger">Rename Device</button>
+            </div>
+          </div><!-- /.modal-content -->
+        </form>
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
 
