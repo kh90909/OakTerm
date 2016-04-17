@@ -339,6 +339,38 @@ $(function() {
       .then(update_devinfo);
   });
 
+  $("#modal-send-event-button").click(function(){
+    var event={ name: $('#event-name').val(),
+                data: $('#event-data').val(),
+                isPrivate: $('#event-private').prop('checked'),
+                auth: access_token };
+
+    console.log('Sending event:', event);
+    particle.publishEvent(event)
+      .then(function(response) { return {event:event, response:response}; })
+      .catch(function(response) { return new Promise(function(resolve, reject){
+        reject({event:event, response:response});
+        });
+      })
+      .then(dump_sent_event)
+      .catch(dump_send_event_err);
+  });
+
+  function dump_sent_event(data) {
+    delete data.event['auth'];
+    var htmlstr='<div class="text_sentevent">Sent event: ' +
+                JSON.stringify(data.event) + '</div>';
+    terminal_print(htmlstr);
+  }
+
+  function dump_send_event_err(data) {
+    delete data.event['auth'];
+    var htmlstr='<div class="text_sentevent">Error sending event: ' +
+                JSON.stringify(data.event) + '. ' +
+                data.response.errorDescription.split(' - ')[1] + '</div>';
+    terminal_print(htmlstr);
+  }
+
   $(document).on('click', '#varstable [data-variable]', dump_variable);
 
   $("#deviceIDs").on('change',function(){
@@ -475,7 +507,6 @@ $(function() {
       }
     });
   }
-
 });
 
 function set_heights(){

@@ -65,9 +65,11 @@
         <div class="col-md-4 col-sm-7 col-xs-12 sm-align-right xs-center">
           <button class="btn btn-success" id="refresh" data-toggle="tooltip" data-placement="bottom" title="Refresh">
             <i class="fa fa-refresh"></i></button>
-          <button class="btn btn-secondary" id="sendevent" data-toggle="tooltip" data-placement="bottom" title="Send Event">
-            <i class="fa fa-paper-plane"></i></button>
-
+          <span data-toggle="modal" data-target="#modal-send-event">
+            <button class="btn btn-secondary" id="sendevent" data-toggle="tooltip" data-placement="bottom" data-trigger="hover" title="Send Event">
+              <i class="fa fa-paper-plane"></i>
+            </button>
+          </span>
           <div class="btn-group">
             <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="fa fa-power-off"></i>
@@ -295,6 +297,58 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="modal-send-event">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Send Event</h4>
+          </div>
+          <div class="modal-body">
+            <form id="send-event" class="form-horizontal">
+              <div class="form-group row">
+                <label for="event-name" class="col-sm-2 form-control-label">Name</label>
+                <div class="col-sm-10">
+                  <input type="text" id="event-name" class="form-control" placeholder="oak/custom/myevent" autofocus />
+                </div>
+              </div>
+              <div class="form-group row">
+                <label for="event-data" class="col-sm-2 form-control-label">Data</label>
+                <div class="col-sm-10">
+                  <input type="text" id="event-data" class="form-control col-sm-9" placeholder="My Data" />
+                </div>
+              </div>
+              <!-- The ttl option is not yet supported by ParticleJS -->
+              <!--
+              <div class="form-group row">
+                <label for="event-ttl" class="col-sm-2 form-control-label">TTL</label>
+                <div class="col-sm-2">
+                  <input type="number" id="event-ttl" class="form-control col-sm-3" value="60" />
+                </div>
+              </div>
+              -->
+              <div class="form-group row">
+                <div class="col-sm-offset-2 col-sm-4">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-secondary active">
+                      <input type="radio" name="event-private" id="event-private" autocomplete="off" checked> Private
+                    </label>
+                    <label class="btn btn-secondary">
+                      <input type="radio" name="event-private" autocomplete="off"> Public
+                    </label>
+                  </div>
+                  <span data-toggle="tooltip" data-trigger="click hover focus" data-placement="right" title="Public events are visible to everyone, private events to clients associated with your Particle.io account only. Note that devices subscribed to events using the MY_DEVICES option will not receive a public event sent from OakTerm (or any sender using the Cloud or ParticleJS APIs)."><i class="fa fa-question-circle hint-icon"></i></span>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn" data-dismiss="modal">Cancel</button>
+            <button type="button" id="modal-send-event-button" class="btn btn-primary btn-default" data-dismiss="modal">Send</button>
           </div>
         </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
