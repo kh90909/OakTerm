@@ -329,7 +329,10 @@ $(function() {
   });
 
   $("#send").click(function(){
-    send_data($("#senddata").val());
+    var data=$("#senddata").val()
+    var htmlstr='<div class="text_stdin">' + data + '</div>';
+    send_data(data);
+    terminal_print(htmlstr);
   });
 
   $("#logout").click(function(){
