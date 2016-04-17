@@ -332,10 +332,16 @@
               </div>
               -->
               <div class="form-group row">
-                <label for="event-private" class="col-sm-2 form-control-label">Private</label>
-                <div class="col-sm-2">
-                  <input type="checkbox" id="event-private" checked />
-                  <span class="hint-icon" data-toggle="tooltip" data-trigger="click hover focus" data-placement="right" title="Public events are visible to everyone, private events to clients associated with your Particle.io account only. Note that devices subscribed to events using the MY_DEVICES option will not receive a public event sent from OakTerm (or any sender using the Cloud or ParticleJS APIs)."><i class="fa fa-question-circle"></i></span>
+                <div class="col-sm-offset-2 col-sm-4">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-secondary active">
+                      <input type="radio" name="event-private" id="event-private" autocomplete="off" checked> Private
+                    </label>
+                    <label class="btn btn-secondary">
+                      <input type="radio" name="event-private" autocomplete="off"> Public
+                    </label>
+                  </div>
+                  <span data-toggle="tooltip" data-trigger="click hover focus" data-placement="right" title="Public events are visible to everyone, private events to clients associated with your Particle.io account only. Note that devices subscribed to events using the MY_DEVICES option will not receive a public event sent from OakTerm (or any sender using the Cloud or ParticleJS APIs)."><i class="fa fa-question-circle hint-icon"></i></span>
                 </div>
               </div>
             </form>
