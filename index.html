@@ -62,7 +62,7 @@
           <h1>OakTerm</h1>
         </div>
 
-        <div class="col-md-4 col-sm-7 col-xs-12 sm-align-right xs-center">
+        <div class="col-md-5 col-sm-7 col-xs-12 sm-align-right xs-center">
           <button class="btn btn-success" id="refresh" data-toggle="tooltip" data-placement="bottom" title="Refresh">
             <i class="fa fa-refresh"></i></button>
           <span data-toggle="modal" data-target="#modal-send-event">
@@ -72,7 +72,7 @@
           </span>
           <div class="btn-group">
             <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="fa fa-power-off"></i>
+              <i class="fa fa-power-off" data-toggle="tooltip" data-placement="bottom" title="Reboot"></i>
             </button>
             <div class="dropdown-menu">
               <a class="dropdown-item" href="#" id="reboot-current">Reboot current device</a>
@@ -85,13 +85,13 @@
           <button class="btn btn-warning" id="usermode" data-toggle="tooltip" data-placement="bottom" title="User Mode">
             <i class="fa fa-user-secret"></i></button>
           <button class="btn btn-default hidden-md-up" id="file-btn" data-toggle="tooltip" data-placement="bottom" title="Upload File">
-            <i class="fa fa-upload"></i></button>
+            <i class="fa fa-cloud-upload"></i></button>
         </div>
 
-        <form class="form-inline col-md-3 hidden-sm-down">
-          <label class="file">
+        <form class="form-inline col-lg-4 col-md-3 hidden-sm-down align-right">
+          <label class="file file-input-hidden">
             <input type="file" id="file-input">
-            <span class="file-custom"></span>
+            <button type="button" class="btn btn-secondary">Upload File <i class="fa fa-cloud-upload"></i></button>
           </label>
         </form>
       </nav>

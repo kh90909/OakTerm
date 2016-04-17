@@ -72,14 +72,10 @@ body::-webkit-scrollbar,
   overflow-y:scroll;
   z-index: 1;
 }
-.file-custom{
-  background-color: #434857;
-  border: 1px solid #434857;
-  color: #ffffff;
+.file-input-hidden [type="file"]{
+  display: none;
 }
-.file-custom::after{
-  content: "Upload File..."
-}
+.file-input-hidden{ margin:0;}
 .navbar label{ margin:0;}
 .centered{
   text-align: center;

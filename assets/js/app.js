@@ -356,6 +356,10 @@ $(function() {
       .catch(dump_send_event_err);
   });
 
+  $('.file-input-hidden > button').on('click', function(){
+    $(this).parent().find('[type="file"]').click();
+  });
+
   function dump_sent_event(data) {
     delete data.event['auth'];
     var htmlstr='<div class="text_sentevent">Sent event: ' +
