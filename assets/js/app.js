@@ -10,6 +10,17 @@ $(function() {
   var device_functions = [];
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
+  var term_text_classes = { '.text_stdin': undefined,
+                            '.text_stdout': undefined,
+                            '.text_stderr': undefined,
+                            '.text_event': undefined,
+                            '.text_sentevent': undefined,
+                            '.text_variable': undefined,
+                            '.text_function': undefined,
+                            '.text_devadm': undefined,
+                            '.text_timestamp': undefined,
+                            '.text_indent': undefined};
+
   var particle = new Particle();
   var activeStream;
 
@@ -26,6 +37,7 @@ $(function() {
     }
   });
 
+  setup_term_styles();
   do_login(true);
 
   function do_login(firstRun){
@@ -227,7 +239,8 @@ $(function() {
   }
 
   function dump_function(func,arg,result){
-    var htmlstr='<div class="text_function">Function call ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_function text_indent">' + eventTime + 'Function call ' +
                 func + '("' + arg + '") returned ' + result + '</div>';
     terminal_print(htmlstr);
   }
@@ -256,7 +269,8 @@ $(function() {
   function dump_variable(event){
     var id=event.target.dataset.variable;
     var device_var = device_vars[id]
-    var htmlstr='<div class="text_variable">Variable '+id+': ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_variable text_indent">' + eventTime + 'Variable '+id+': ' +
                 device_var.value +
                 ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
     terminal_print(htmlstr);
@@ -266,6 +280,18 @@ $(function() {
     return particle.getEventStream({deviceId: current_device.id,auth: access_token});
   }
 
+  function format_time_span(optdate) {
+    var date;
+    if(optdate){
+      date = new Date(optdate);
+    } else {
+      date = new Date();
+    }
+    return '<span class="text_timestamp">[' +
+             date.toTimeString().substring(0,8) +
+           '] </span>';
+  }
+
   function display_event(stream){
     activeStream = stream;
     activeStream.active = true;
@@ -273,6 +299,7 @@ $(function() {
     activeStream.on('event', function(event) {
 
       var event_class="";
+      var event_elem='div';
       switch(event.name){
         case 'oak/devices/stderr': // Typo in OakSystem.ino
         case 'oak/device/stderr':
@@ -283,15 +310,16 @@ $(function() {
             prestr='';
           }
           poststr='<br>';
-          event_class='text_stderr';
+          event_class='text_stderr text_indent';
           break;
         case 'oak/device/stdout':
           prestr='';
           poststr='';
-          event_class='text_stdout';
+          event_class='text_stdout text_indent';
+          event_elem='span';
           break;
         default:
-          event_class='text_event';
+          event_class='text_event text_indent';
           if($("#content").html().endsWith('<br>')){
             prestr='<br>';
           }
@@ -304,8 +332,9 @@ $(function() {
             event.data='<no data>';
           }
       }
+      eventTime = format_time_span(event.published_at);
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
-      htmlstr='<div class="'+event_class+'">'+prestr+htmlstr+poststr+'</div>';
+      htmlstr='<' + event_elem + ' class="'+event_class+'">'+eventTime+prestr+htmlstr+poststr+'</' + event_elem + '>';
       terminal_print(htmlstr);
     });
   }
@@ -330,7 +359,8 @@ $(function() {
 
   $("#send").click(function(){
     var data=$("#senddata").val()
-    var htmlstr='<div class="text_stdin">' + data + '</div>';
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_stdin text_indent">' + eventTime + data + '</div>';
     send_data(data);
     terminal_print(htmlstr);
   });
@@ -371,14 +401,16 @@ $(function() {
 
   function dump_sent_event(data) {
     delete data.event['auth'];
-    var htmlstr='<div class="text_sentevent">Sent event: ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_sentevent text_indent">' + eventTime + 'Sent event: ' +
                 JSON.stringify(data.event) + '</div>';
     terminal_print(htmlstr);
   }
 
   function dump_send_event_err(data) {
     delete data.event['auth'];
-    var htmlstr='<div class="text_sentevent">Error sending event: ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_sentevent text_indent">' + eventTime + 'Error sending event: ' +
                 JSON.stringify(data.event) + '. ' +
                 data.response.errorDescription.split(' - ')[1] + '</div>';
     terminal_print(htmlstr);
@@ -394,7 +426,8 @@ $(function() {
       stop_stream();
     }
 
-    var htmlStr = '<div class="device-change">Device change: '+current_device.name+'</div>';
+    var eventTime = format_time_span();
+    var htmlStr = '<div class="text_devadm text_indent">' + eventTime + 'Device change: '+current_device.name+'</div>';
     terminal_print(htmlStr);
 
     $('#devtable tbody').html('');
@@ -471,6 +504,64 @@ $(function() {
 
   $('#settings input, #settings select').on('change', save_settings);
 
+  // Bootstrap 4 alpha has a bug where events on radio buttons in a btn-group
+  // don't fire (https://github.com/twbs/bootstrap/issues/17599), so listen for
+  // the event on the labels as a workaround.
+
+  $('#settings label[for^="show-"]').on('change', show_hide_content);
+
+  function find_text_styles(){
+    _.each(window.document.styleSheets, function(sheet) {
+      _.each(sheet.rules || sheet.cssRules, function(cls) {
+        if(cls.selectorText in term_text_classes){
+          term_text_classes[cls.selectorText]=cls;
+        }
+      });
+    });
+  }
+
+  function set_term_indent(override){
+    var tlen=$(format_time_span()).html().length;
+    if(override){ tlen=override; }
+    term_text_classes['.text_indent'].style.textIndent = -tlen+"ch";
+    term_text_classes['.text_indent'].style.paddingLeft = tlen+"ch";
+  }
+
+  function setup_term_styles(){
+    find_text_styles();
+    set_term_indent();
+    term_text_classes['.text_stdout'].style.display = "block";
+    console.log('setup_term_styles(): Text classes:',term_text_classes);
+  };
+
+  function show_hide_term_cat(cat){
+    var cls='.text_'+cat;
+
+    if($('#show-'+cat+'-on').prop('checked')){
+      console.log('Showing class',cls);
+      if(cat == 'timestamp'){
+        set_term_indent();
+      }
+      if(cat == 'timestamp' || (cat == 'stdout' && settings['show-timestamp'] == 'false')){
+        term_text_classes[cls].style.display = "inline";
+      } else {
+        term_text_classes[cls].style.display = "block";
+      }
+    } else {
+      console.log('Hiding class',cls);
+      term_text_classes[cls].style.display = "none";
+      if(cat == 'timestamp') {
+        set_term_indent(0);
+      }
+    }
+  }
+
+  function show_hide_content(e){
+    console.log('show_hide_content(): target:',e.target);
+    show_hide_term_cat(e.target.htmlFor.split('-')[1]);
+    save_settings();
+  }
+
   $('#device-details,#var-details,#func-details').on('hide.bs.collapse', toggle_arrow);
   $('#device-details,#var-details,#func-details').on('show.bs.collapse', toggle_arrow);
 
@@ -534,7 +625,8 @@ $(function() {
       })
       .then(update_devices)
       .then(function(device){
-        var htmlstr='<div class="rename">Device Rename: '+oldName+' to '+newName+'</div>';
+        var eventTime = format_time_span();
+        var htmlstr='<div class="text_devadm text_indent">' + eventTime + 'Device Rename: '+oldName+' to '+newName+'</div>';
         terminal_print(htmlstr);
       })
   }
@@ -572,7 +664,16 @@ $(function() {
     var defaults = [
       {"name":"autoscroll","value":"onEvent"},
       {"name":"lineends","value":"rn"},
-      {"name":"subenter","value":"true"}
+      {"name":"subenter","value":"true"},
+      {"name":"show-stdin","value":"true"},
+      {"name":"show-stdout","value":"true"},
+      {"name":"show-stderr","value":"true"},
+      {"name":"show-event","value":"true"},
+      {"name":"show-sentevent","value":"true"},
+      {"name":"show-variable","value":"true"},
+      {"name":"show-function","value":"true"},
+      {"name":"show-devadm","value":"true"},
+      {"name":"show-timestamp","value":"true"}
     ];
 
     if(saved_settings){
@@ -599,18 +700,33 @@ $(function() {
       current_device = null;
     }
 
-    // User settings modal
+    // User settings modal and content show/hide settings
     _.each(settings, function(item){
-      var $item = $('[name="'+item.name+'"]');
+      console.log('Restoring settings var',item.name,'value =',item.value);
 
+      var $item = $('[name="'+item.name+'"]');
       if($item.attr('type') == 'radio'){
         $item.each(function(){
           if( $(this).val() == item.value){
             $(this).prop('checked', 'checked');
+            if($(this).parent().hasClass('btn')){
+              $(this).parent().addClass('active');
+            }
+          } else {
+            if($(this).parent().hasClass('btn')){
+              $(this).parent().removeClass('active');
+              //console.log('Cleared active on parent:',$(this).parent());
+            }
           }
         });
       } else{
         $item.val(item.value);
+      }
+
+      var cat=item.name.replace(/^show-/,'');
+      var cls='.text_'+cat;
+      if(cls in term_text_classes) {
+        show_hide_term_cat(cat);
       }
     });
   }
