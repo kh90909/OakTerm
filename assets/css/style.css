@@ -3,6 +3,9 @@
   background-color: #1f8dd6;
   color: white;
 }
+
+.timestamp { color: #848484; }
+
 .text_stdin     { color: #808080; }
 .text_stdout    { color: #ffffff; }
 .text_stderr    { color: #d9534f; }
@@ -11,11 +14,30 @@
 .text_variable  { color: #5bc0de; }
 .text_function  { color: #5cb85c; }
 .text_devadm { color: #a0a0ff; }
-.text_timestamp { color: #848484; }
-.text_indent {
+
+[class^="text_"] {
     text-indent: -11ch;
     padding-left: 11ch;
 }
+
+.hide_timestamp  .timestamp,
+.hide_stdin .text_stdin,
+.hide_stdout .text_stdout,
+.hide_stderr .text_stderr,
+.hide_event .text_event,
+.hide_sentevent .text_sentevent,
+.hide_variable .text_variable,
+.hide_function .text_function,
+.hide_devadm .text_devadm { display: none; }
+
+.hide_timestamp [class^="text_"] {
+    text-indent: 0ch;
+    padding-left: 0ch;
+}
+
+.hide_timestamp .text_stdout { display: inline; }
+
+
 .popover-content{ color: #000000 !important; }
 .popover-title{ display: none; }
 
