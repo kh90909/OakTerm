@@ -304,12 +304,12 @@ $(function() {
         case 'oak/devices/stderr': // Typo in OakSystem.ino
         case 'oak/device/stderr':
           if($("#content").html().endsWith('<br>')){
-            prestr='<br>';
+            prestr='';
           }
           else{
             prestr='';
           }
-          poststr='<br>';
+          poststr='';
           event_class='text_stderr text_indent';
           break;
         case 'oak/device/stdout':
@@ -321,13 +321,13 @@ $(function() {
         default:
           event_class='text_event text_indent';
           if($("#content").html().endsWith('<br>')){
-            prestr='<br>';
+            prestr='';
           }
           else{
             prestr='';
           }
           prestr=prestr+'Event: '+ event.name + ' - ';
-          poststr='<br>';
+          poststr='';
           if(event.data == null){
             event.data='<no data>';
           }
