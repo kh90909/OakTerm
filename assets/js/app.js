@@ -288,40 +288,25 @@ $(function() {
     activeStream.on('event', function(event) {
 
       var event_class="";
+      var prestr="";
       switch(event.name){
         case 'oak/devices/stderr': // Typo in OakSystem.ino
         case 'oak/device/stderr':
-          if($("#content").html().endsWith('<br>')){
-            prestr='';
-          }
-          else{
-            prestr='';
-          }
-          poststr='';
           event_class='text_stderr';
           break;
         case 'oak/device/stdout':
-          prestr='';
-          poststr='';
           event_class='text_stdout';
           break;
         default:
           event_class='text_event';
-          if($("#content").html().endsWith('<br>')){
-            prestr='';
-          }
-          else{
-            prestr='';
-          }
-          prestr=prestr+'Event: '+ event.name + ' - ';
-          poststr='';
+          prestr='Event: '+ event.name + ' - ';
           if(event.data == null){
             event.data='<no data>';
           }
       }
       eventTime = format_time_span(event.published_at);
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
-      htmlstr='<div class="'+event_class+'">'+eventTime+prestr+htmlstr+poststr+'</div>';
+      htmlstr='<div class="'+event_class+'">'+eventTime+prestr+htmlstr+'</div>';
       terminal_print(htmlstr);
     });
   }
