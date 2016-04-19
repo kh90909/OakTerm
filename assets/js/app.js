@@ -522,7 +522,7 @@ $(function() {
 
   function set_term_indent(override){
     var tlen=$(format_time_span()).html().length;
-    if(override){ tlen=override; }
+    if(typeof(override)!='undefined'){ tlen=override; }
     term_text_classes['.text_indent'].style.textIndent = -tlen+"ch";
     term_text_classes['.text_indent'].style.paddingLeft = tlen+"ch";
   }
@@ -536,22 +536,30 @@ $(function() {
 
   function show_hide_term_cat(cat){
     var cls='.text_'+cat;
+    var show_timestamp;
+    _.each(settings,function(item,idx){
+      if(item.name == 'show-timestamp') {
+        show_timestamp=item.value;
+      }
+    });
 
     if($('#show-'+cat+'-on').prop('checked')){
       console.log('Showing class',cls);
-      if(cat == 'timestamp'){
-        set_term_indent();
-      }
-      if(cat == 'timestamp' || (cat == 'stdout' && settings['show-timestamp'] == 'false')){
+      if(cat == 'timestamp' || (cat == 'stdout' && show_timestamp == 'false')){
         term_text_classes[cls].style.display = "inline";
       } else {
         term_text_classes[cls].style.display = "block";
+      }
+      if(cat == 'timestamp'){
+        set_term_indent();
+        term_text_classes['.text_stdout'].style.display = "block";
       }
     } else {
       console.log('Hiding class',cls);
       term_text_classes[cls].style.display = "none";
       if(cat == 'timestamp') {
         set_term_indent(0);
+        term_text_classes['.text_stdout'].style.display = "inline";
       }
     }
   }
