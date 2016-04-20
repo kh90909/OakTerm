@@ -10,6 +10,7 @@ $(function() {
   var device_functions = [];
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
+
   var particle = new Particle();
   var activeStream;
 
@@ -227,7 +228,8 @@ $(function() {
   }
 
   function dump_function(func,arg,result){
-    var htmlstr='<div class="text_function">Function call ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_function">' + eventTime + 'Function call ' +
                 func + '("' + arg + '") returned ' + result + '</div>';
     terminal_print(htmlstr);
   }
@@ -256,7 +258,8 @@ $(function() {
   function dump_variable(event){
     var id=event.target.dataset.variable;
     var device_var = device_vars[id]
-    var htmlstr='<div class="text_variable">Variable '+id+': ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_variable">' + eventTime + 'Variable '+id+': ' +
                 device_var.value +
                 ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
     terminal_print(htmlstr);
@@ -266,6 +269,18 @@ $(function() {
     return particle.getEventStream({deviceId: current_device.id,auth: access_token});
   }
 
+  function format_time_span(optdate) {
+    var date;
+    if(optdate){
+      date = new Date(optdate);
+    } else {
+      date = new Date();
+    }
+    return '<span class="timestamp">[' +
+             date.toTimeString().substring(0,8) +
+           '] </span>';
+  }
+
   function display_event(stream){
     activeStream = stream;
     activeStream.active = true;
@@ -273,39 +288,25 @@ $(function() {
     activeStream.on('event', function(event) {
 
       var event_class="";
+      var prestr="";
       switch(event.name){
         case 'oak/devices/stderr': // Typo in OakSystem.ino
         case 'oak/device/stderr':
-          if($("#content").html().endsWith('<br>')){
-            prestr='<br>';
-          }
-          else{
-            prestr='';
-          }
-          poststr='<br>';
           event_class='text_stderr';
           break;
         case 'oak/device/stdout':
-          prestr='';
-          poststr='';
           event_class='text_stdout';
           break;
         default:
           event_class='text_event';
-          if($("#content").html().endsWith('<br>')){
-            prestr='<br>';
-          }
-          else{
-            prestr='';
-          }
-          prestr=prestr+'Event: '+ event.name + ' - ';
-          poststr='<br>';
+          prestr='Event: '+ event.name + ' - ';
           if(event.data == null){
             event.data='<no data>';
           }
       }
+      eventTime = format_time_span(event.published_at);
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
-      htmlstr='<div class="'+event_class+'">'+prestr+htmlstr+poststr+'</div>';
+      htmlstr='<div class="'+event_class+'">'+eventTime+prestr+htmlstr+'</div>';
       terminal_print(htmlstr);
     });
   }
@@ -329,7 +330,11 @@ $(function() {
   });
 
   $("#send").click(function(){
-    send_data($("#senddata").val());
+    var data=$("#senddata").val()
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_stdin">' + eventTime + data + '</div>';
+    send_data(data);
+    terminal_print(htmlstr);
   });
 
   $("#logout").click(function(){
@@ -368,14 +373,16 @@ $(function() {
 
   function dump_sent_event(data) {
     delete data.event['auth'];
-    var htmlstr='<div class="text_sentevent">Sent event: ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_sentevent">' + eventTime + 'Sent event: ' +
                 JSON.stringify(data.event) + '</div>';
     terminal_print(htmlstr);
   }
 
   function dump_send_event_err(data) {
     delete data.event['auth'];
-    var htmlstr='<div class="text_sentevent">Error sending event: ' +
+    var eventTime = format_time_span();
+    var htmlstr='<div class="text_sentevent">' + eventTime + 'Error sending event: ' +
                 JSON.stringify(data.event) + '. ' +
                 data.response.errorDescription.split(' - ')[1] + '</div>';
     terminal_print(htmlstr);
@@ -391,7 +398,8 @@ $(function() {
       stop_stream();
     }
 
-    var htmlStr = '<div class="device-change">Device change: '+current_device.name+'</div>';
+    var eventTime = format_time_span();
+    var htmlStr = '<div class="text_devadm">' + eventTime + 'Device change: '+current_device.name+'</div>';
     terminal_print(htmlStr);
 
     $('#devtable tbody').html('');
@@ -468,6 +476,19 @@ $(function() {
 
   $('#settings input, #settings select').on('change', save_settings);
 
+  // Bootstrap 4 alpha has a bug where events on radio buttons in a btn-group
+  // don't fire (https://github.com/twbs/bootstrap/issues/17599), so listen for
+  // the event on the labels as a workaround.
+
+  $('#settings label[for^="show-"]').on('change', show_hide_content);
+
+  function show_hide_content(e){
+    save_settings();
+    var id_parts = e.target.htmlFor.split('-');
+    $('#content').toggleClass('hide_' + id_parts[1], id_parts[2] == 'off')
+    console.log('show_hide_content(): Turning', id_parts[1], id_parts[2]);
+  }
+
   $('#device-details,#var-details,#func-details').on('hide.bs.collapse', toggle_arrow);
   $('#device-details,#var-details,#func-details').on('show.bs.collapse', toggle_arrow);
 
@@ -531,7 +552,8 @@ $(function() {
       })
       .then(update_devices)
       .then(function(device){
-        var htmlstr='<div class="rename">Device Rename: '+oldName+' to '+newName+'</div>';
+        var eventTime = format_time_span();
+        var htmlstr='<div class="text_devadm">' + eventTime + 'Device Rename: '+oldName+' to '+newName+'</div>';
         terminal_print(htmlstr);
       })
   }
@@ -569,7 +591,16 @@ $(function() {
     var defaults = [
       {"name":"autoscroll","value":"onEvent"},
       {"name":"lineends","value":"rn"},
-      {"name":"subenter","value":"true"}
+      {"name":"subenter","value":"true"},
+      {"name":"show-stdin","value":"true"},
+      {"name":"show-stdout","value":"true"},
+      {"name":"show-stderr","value":"true"},
+      {"name":"show-event","value":"true"},
+      {"name":"show-sentevent","value":"true"},
+      {"name":"show-variable","value":"true"},
+      {"name":"show-function","value":"true"},
+      {"name":"show-devadm","value":"true"},
+      {"name":"show-timestamp","value":"true"}
     ];
 
     if(saved_settings){
@@ -596,18 +627,26 @@ $(function() {
       current_device = null;
     }
 
-    // User settings modal
+    // User settings modal and content show/hide settings
     _.each(settings, function(item){
-      var $item = $('[name="'+item.name+'"]');
+      console.log('restore_settings(): Restoring var',item.name,'value =',item.value);
 
+      var $item = $('[name="'+item.name+'"]');
       if($item.attr('type') == 'radio'){
         $item.each(function(){
-          if( $(this).val() == item.value){
-            $(this).prop('checked', 'checked');
+          $(this).prop('checked', $(this).val() == item.value);
+          if($(this).parent().hasClass('btn')){
+            $(this).parent().toggleClass('active', $(this).val() == item.value);
           }
         });
       } else{
         $item.val(item.value);
+      }
+
+      if ( item.name.slice(0,5) == 'show-' ) {
+        var item_class = 'hide_' + item.name.slice(5);
+        $('#content').toggleClass(item_class, item.value == 'false')
+        console.log('restore_settings(): Turning', item.name.slice(5), item.value == 'true' ? 'on' : 'off');
       }
     });
   }

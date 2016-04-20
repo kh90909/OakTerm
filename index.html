@@ -293,6 +293,126 @@
                   </div>
                 </div>
               </div>
+
+              <div class="form-group row">
+                <label class="col-sm-3 form-control-label">Show/Hide</label>
+                <div class="col-sm-4">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-stdin-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-stdin-on" name="show-stdin" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-stdin-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-stdin-off" name="show-stdin" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-stdin" class="form-control-sm form-control-label">stdin</label>
+                </div>
+
+                <div class="col-sm-5">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-function-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-function-on" name="show-function" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-function-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-function-off" name="show-function" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-function" class="form-control-sm form-control-label">Functions</label>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <div class="col-sm-offset-3 col-sm-4">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-stdout-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-stdout-on" name="show-stdout" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-stdout-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-stdout-off" name="show-stdout" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-stdout" class="form-control-sm form-control-label">stdout</label>
+                </div>
+
+                <div class="col-sm-5">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-event-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-event-on" name="show-event" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-event-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-event-off" name="show-event" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-event" class="form-control-sm form-control-label">Received events</label>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <div class="col-sm-offset-3 col-sm-4">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-stderr-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-stderr-on" name="show-stderr" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-stderr-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-stderr-off" name="show-stderr" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-stderr" class="form-control-sm form-control-label">stderr</label>
+                </div>
+
+                <div class="col-sm-5">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-sentevent-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-sentevent-on" name="show-sentevent" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-sentevent-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-sentevent-off" name="show-sentevent" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-sentevent" class="form-control-sm form-control-label">Sent events</label>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <div class="col-sm-offset-3 col-sm-4">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-variable-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-variable-on" name="show-variable" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-variable-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-variable-off" name="show-variable" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-variable" class="form-control-sm form-control-label">Variables</label>
+                </div>
+
+                <div class="col-sm-5">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-timestamp-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-timestamp-on" name="show-timestamp" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-timestamp-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" for="show-timestamp-off" name="show-timestamp" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-timestamp" class="form-control-sm form-control-label">Timestamps</label>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <div class="col-sm-offset-3 col-sm-5">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="show-devadm-on" class="btn btn-sm btn-secondary active">
+                      <input type="radio" id="show-devadm-on" name="show-devadm" autocomplete="off" value="true" checked> On
+                    </label>
+                    <label for="show-devadm-off" class="btn btn-sm btn-secondary">
+                      <input type="radio" id="show-devadm-off" name="show-devadm" autocomplete="off" value="false"> Off
+                    </label>
+                  </div>
+                  <label for="show-devadm" class="form-control-sm form-control-label">Device admin</label>
+                </div>
+              </div>
+
             </form>
           </div>
           <div class="modal-footer">
