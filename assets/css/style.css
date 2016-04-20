@@ -53,15 +53,16 @@
 
 
 /* Global styling */
-html{ font-size:14px; }
+html{ font-size:14px; overflow: scroll !important;}
 body, html{ background: #252830; color:#fff; }
 .align-right{ text-align: right; }
 .float-right{ float:right; }
 .center{ text-align: center; }
 
 /* Bootstrap Overrides */
-body::-webkit-scrollbar,
-.fixed-sidebar::-webkit-scrollbar{ display: none }
+html.no-scroll-bars{ overflow: auto !important;}
+html.no-scroll-bars body::-webkit-scrollbar,
+html.no-scroll-bars .fixed-sidebar::-webkit-scrollbar{ display: none }
 .form-control:not(.form-control-func-arg) {
   display: block;
   width: 100%;
