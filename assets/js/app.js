@@ -129,6 +129,7 @@ $(function() {
     $("#devstatus").attr('data-status', data.body.connected);
 
     if(_.isEmpty(data.body.variables)){
+      device_vars = {};
       $("#varstbody").html('<td colspan="2" class="centered"><i>None exposed by firmware</i></td>');
     } else{
       var new_vars = _.mapObject(data.body.variables, function(item, key){
