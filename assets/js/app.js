@@ -548,12 +548,12 @@ $(function() {
 
     switch(get_setting('autoscroll')){
       case 'pageBtm':
-        if((window.innerHeight + window.scrollY) >= (document.body.offsetHeight-50)) {
-          $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+        if((window.innerHeight + window.scrollY) >= (document.body.offsetHeight-30)) {
+          $("html, body").animate({ scrollTop: $(document).height() }, 250);
         }
         break;
       case 'onEvent':
-        $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+        $("html, body").animate({ scrollTop: $(document).height() }, 250);
         break;
     }
   }
@@ -608,7 +608,7 @@ $(function() {
   }
 
   function save_settings(){
-    settings = $('#settings').serializeArray();
+    settings = _.object(_.map($('#settings').serializeArray(), _.values));
     localStorage.setItem("settings", JSON.stringify(settings));
     console.log( 'Saved settings:', settings);
   }
@@ -616,22 +616,21 @@ $(function() {
   function get_settings(){
     var new_settings;
     var saved_settings = localStorage.getItem("settings");
-    var defaults = [
-      {"name":"autoscroll","value":"onEvent"},
-      {"name":"lineends","value":"\\r\\n"},
-      {"name":"subenter","value":"true"},
-      {"name":"show-stdin","value":"true"},
-      {"name":"show-stdout","value":"true"},
-      {"name":"show-stderr","value":"true"},
-      {"name":"show-event","value":"true"},
-      {"name":"show-sentevent","value":"true"},
-      {"name":"show-variable","value":"true"},
-      {"name":"show-function","value":"true"},
-      {"name":"show-devadm","value":"true"},
-      {"name":"show-timestamp","value":"true"},
-      {"name":"echo","value":"true"},
-      {"name":"scrollbars","value":"false"}
-    ];
+    var defaults = {
+      "autoscroll": "pageBtm",
+      "lineends": "\\r\\n",
+      "scrollbars": "false",
+      "show-devadm": "true",
+      "show-event": "true",
+      "show-function": "true",
+      "show-sentevent": "true",
+      "show-stderr": "true",
+      "show-stdin": "true",
+      "show-stdout": "true",
+      "show-timestamp": "true",
+      "show-variable": "true",
+      "subenter": "true"
+    };
 
     if(saved_settings){
       try{
@@ -650,7 +649,7 @@ $(function() {
   }
 
   function get_setting(name){
-    var val = _.findWhere(settings, {name: name}).value;
+    var val = settings[name];
     if(val === 'true') val = true;
     if(val === 'false') val = false;
     return val;
@@ -667,26 +666,25 @@ $(function() {
     console.log('restoring settings:', settings);
 
     // User settings modal and content show/hide settings
-    _.each(settings, function(item){
-      var $item = $('[name="'+item.name+'"]');
+    _.each(settings, function(value, key){
+      var $item = $('[name="'+key+'"]');
       if($item.attr('type') == 'radio'){
         $item.each(function(){
-          $(this).prop('checked', $(this).val() == item.value);
+          $(this).prop('checked', $(this).val() == value);
           if($(this).parent().hasClass('btn')){
-            $(this).parent().toggleClass('active', $(this).val() == item.value);
+            $(this).parent().toggleClass('active', $(this).val() == value);
           }
         });
       } else{
-        $item.val(item.value);
+        $item.val(value);
       }
 
-      if ( item.name.slice(0,5) == 'show-' ) {
-        var item_class = 'hide_' + item.name.slice(5);
-        $('#content').toggleClass(item_class, item.value == 'false')
-        //console.log('restore_settings(): Turning', item.name.slice(5), item.value == 'true' ? 'on' : 'off');
+      if ( key.slice(0,5) == 'show-' ) {
+        var item_class = 'hide_' + key.slice(5);
+        $('#content').toggleClass(item_class, value == 'false')
       }
 
-      if(( item.name == 'scrollbars') && item.value == 'true'){
+      if(( key == 'scrollbars') && value === 'true'){
         $('html').removeClass('no-scroll-bars');
       }
     });

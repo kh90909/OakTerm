@@ -53,14 +53,33 @@
 
 
 /* Global styling */
-html{ font-size:14px; overflow: scroll !important;}
+html{ font-size:14px; overflow-y: scroll !important;}
 body, html{ background: #252830; color:#fff; }
 .align-right{ text-align: right; }
 .float-right{ float:right; }
 .center{ text-align: center; }
+::-webkit-scrollbar {
+    width: 12px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    background: rgba(67,72,87,0.8);
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+}
+::-webkit-scrollbar-thumb:window-inactive {
+  background: rgba(67,72,87,0.4);
+}
 
 /* Bootstrap Overrides */
-html.no-scroll-bars{ overflow: auto !important;}
+html.no-scroll-bars{ overflow-y: auto !important;}
 html.no-scroll-bars body::-webkit-scrollbar,
 html.no-scroll-bars .fixed-sidebar::-webkit-scrollbar{ display: none }
 .form-control:not(.form-control-func-arg) {
@@ -97,7 +116,7 @@ html.no-scroll-bars .fixed-sidebar::-webkit-scrollbar{ display: none }
   padding-top:70px;
   padding-bottom:70px;
   height:100%;
-  overflow-y:scroll;
+  overflow-y:auto;
   z-index: 1;
 }
 .file-input-hidden [type="file"]{

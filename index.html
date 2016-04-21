@@ -165,37 +165,39 @@
               </div>
             </div>
             <div class="collapse" id="func-details">
-              <table class="table table-compact" id="funcstable">
-                <tbody id="funcstbody">
-                  <tr id="row-nofuncs">
-                    <td class="centered">
-                      <i>None exposed by firmware</i>
-                    </td>
-                  </tr>
-                  <script id="func-template" type="text/html">
-                    <td>
-                      <div>
-                        <a role="button" class="func" id="{{param1}}-row" data-target="[id='func-{{param1}}']" data-toggle="collapse">
-                          int {{param1}}(String arg);
-                        </a>
-                      </div>
-                      <div id="func-{{param1}}" class="collapse">
-                        <label for="arg-{{param1}}" class="func-arg-label">
-                          &#9495;&nbsp;arg
-                        </label>
-                        <div class="input-group input-group-sm">
-                          <input type="text" id="arg-{{param1}}" class=" form-control form-control-func-arg">
-                          <span class="input-group-btn">
-                            <button id="btn-{{param1}}" type="button" class="btn btn-primary">
-                              Call
-                            </button>
-                          </span>
+              <div class="wrap">
+                <table class="table table-compact" id="funcstable">
+                  <tbody id="funcstbody">
+                    <tr id="row-nofuncs">
+                      <td class="centered">
+                        <i>None exposed by firmware</i>
+                      </td>
+                    </tr>
+                    <script id="func-template" type="text/html">
+                      <td>
+                        <div>
+                          <a role="button" class="func" id="{{param1}}-row" data-target="[id='func-{{param1}}']" data-toggle="collapse">
+                            int {{param1}}(String arg);
+                          </a>
                         </div>
-                      </div>
-                    </td>
-                  </script>
-                </tbody>
-              </table>
+                        <div id="func-{{param1}}" class="collapse">
+                          <label for="arg-{{param1}}" class="func-arg-label">
+                            &#9495;&nbsp;arg
+                          </label>
+                          <div class="input-group input-group-sm">
+                            <input type="text" id="arg-{{param1}}" class=" form-control form-control-func-arg">
+                            <span class="input-group-btn">
+                              <button id="btn-{{param1}}" type="button" class="btn btn-primary">
+                                Call
+                              </button>
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </script>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </fieldset>
         </div>
@@ -275,7 +277,7 @@
                 <label for="lineends" class="col-sm-3 form-control-label">Line Endings</label>
                 <div class="col-sm-9">
                   <select name="lineends" id="lineends" class="form-control">
-                    <option value="\r" selected>\r</option>
+                    <option value="\r">\r</option>
                     <option value="\n">\n</option>
                     <option value="\r\n">\r\n</option>
                     <option value="false">none</option>
@@ -292,6 +294,20 @@
                     </label>
                     <label class="btn btn-secondary">
                       <input type="radio" name="subenter" id="subenter-off" value="false"> Disabled
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label for="scrollbars" class="col-sm-3 form-control-label">Visible Scroll Bars</label>
+                <div class="col-sm-9">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="scrollbars-on" class="btn btn-secondary">
+                      <input type="radio" name="scrollbars" id="scrollbars-on" value="true"> Enabled
+                    </label>
+                    <label for="scrollbars-off" class="btn btn-secondary active">
+                      <input type="radio" name="scrollbars" id="scrollbars-off" value="false" checked> Disabled
                     </label>
                   </div>
                 </div>
@@ -395,7 +411,7 @@
                       <input type="radio" id="show-timestamp-on" name="show-timestamp" autocomplete="off" value="true" checked> On
                     </label>
                     <label for="show-timestamp-off" class="btn btn-sm btn-secondary">
-                      <input type="radio" for="show-timestamp-off" name="show-timestamp" autocomplete="off" value="false"> Off
+                      <input type="radio" id="show-timestamp-off" name="show-timestamp" autocomplete="off" value="false"> Off
                     </label>
                   </div>
                   <label for="show-timestamp" class="form-control-sm form-control-label">Timestamps</label>
@@ -413,19 +429,6 @@
                     </label>
                   </div>
                   <label for="show-devadm" class="form-control-sm form-control-label">Device admin</label>
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="scrollbars" class="col-sm-3 form-control-label">Visible Scroll Bars</label>
-                <div class="col-sm-9">
-                  <div class="btn-group" data-toggle="buttons">
-                    <label for="scrollbars-on" class="btn btn-secondary">
-                      <input type="radio" name="scrollbars" id="scrollbars-on" value="true"> Enabled
-                    </label>
-                    <label for="scrollbars-off" class="btn btn-secondary">
-                      <input type="radio" name="scrollbars" id="scrollbars-off" value="false"> Disabled
-                    </label>
-                  </div>
                 </div>
               </div>
 
