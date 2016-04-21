@@ -244,7 +244,7 @@ $(function() {
       result = data.body.result.toString();
     }
 
-    $("[id='"+data.body.name+"']").html(result);
+    $("td[data-variable='"+data.body.name+"']").html(result);
   }
 
   function dump_variable(event){
