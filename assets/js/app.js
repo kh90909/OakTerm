@@ -376,7 +376,8 @@ $(function() {
     get_devices()
       .then(update_devices);
     get_devinfo()
-      .then(update_devinfo);
+      .then(update_devinfo)
+      .then(get_variables);
   });
 
   $("#modal-send-event-button").click(function(){
@@ -436,6 +437,7 @@ $(function() {
     $('#devtable tbody').html('');
     get_devinfo()
       .then(update_devinfo)
+      .then(get_variables)
       .then(subscribe_events)
       .then(display_event);
   });
