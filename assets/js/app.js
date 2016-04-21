@@ -312,6 +312,14 @@ $(function() {
         case 'oak/device/stdout':
           event_class='text_stdout';
           break;
+        case 'spark/status':
+          if(event.data == 'online'){
+            console.log('Detected spark/status - online event. Refreshing info and vars');
+            get_devinfo()
+              .then(update_devinfo)
+              .then(get_variables)
+          }
+          // No break since we want to fall through and display this event
         default:
           event_class='text_event';
           prestr='Event: '+ event.name + ' - ';
