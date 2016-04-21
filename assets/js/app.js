@@ -222,10 +222,34 @@ $(function() {
     terminal_print(htmlstr);
   }
 
+  function rejected_promise(data){
+    return new Promise(function(resolve, reject){
+      reject(data);
+    });
+  }
+
+  function gen_err_handler(msg){
+    return function(data){
+      console.log(msg + ':', data.body.error);
+      return rejected_promise(data);
+    }
+  }
+
+  function get_variable(name){
+    return particle.getVariable({deviceId: current_device.id, name: name,
+                                 auth: access_token})
+      .catch(gen_err_handler('Error getting variable value'))
+      .then(update_variable);
+  }
+
+  function get_and_dump_variable(event){
+    get_variable(event.target.dataset.variable)
+      .then(dump_variable);
+  }
+
   function get_variables(){
     _.each(device_vars, function(variable, name) {
-      particle.getVariable({deviceId: current_device.id, name: name, auth: access_token})
-        .then(update_variable)
+      get_variable(name);
     });
   }
 
@@ -241,14 +265,17 @@ $(function() {
     }
 
     $("td[data-variable='"+data.body.name+"']").html(result);
+
+    return data;
   }
 
-  function dump_variable(event){
-    var id=event.target.dataset.variable;
-    var device_var = device_vars[id]
-    var htmlstr='<div class="text_variable">Variable '+id+': ' +
-                device_var.value +
-                ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
+  function dump_variable(data){
+    var device_var = device_vars[data.body.name];
+    var htmlstr='<div class="text_variable">Variable ' +
+                data.body.name +': ' + device_var.value +
+                ' <span class="var-type-' + device_var.type + '">(' +
+                device_var.type+')</span></div>';
+
     terminal_print(htmlstr);
   }
 
@@ -375,7 +402,7 @@ $(function() {
     terminal_print(htmlstr);
   }
 
-  $(document).on('click', '#varstable [data-variable]', dump_variable);
+  $(document).on('click', '#varstable [data-variable]', get_and_dump_variable);
 
   $("#deviceIDs").on('change',function(){
     current_device= _.findWhere(all_devices, {id: this.value});
