@@ -236,15 +236,14 @@ $(function() {
   function gen_err_handler(msg){
     return function(data){
       console.log(msg + ':', data.body.error);
-      return rejected_promise(data);
     }
   }
 
   function get_variable(name){
     return particle.getVariable({deviceId: current_device.id, name: name,
                                  auth: access_token})
-      .catch(gen_err_handler('Error getting variable value'))
-      .then(update_variable);
+      .then(update_variable)
+      .catch(gen_err_handler('Error getting variable value'));
   }
 
   function get_and_dump_variable(event){
