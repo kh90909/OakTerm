@@ -237,18 +237,16 @@ $(function() {
 
   function inject_error(code,desc){
     return function(data){
-      console.log('inject_error_func(): start');
       data.body.OakTermErr=code;
       data.body.OakTermErrDesc=desc;
       return Promise.reject(data);
-      //return rejected_promise(data);
     };
   }
 
   function oakterm_error_handler(data){
-    console.log('oakterm_error_handler(): enter');
-    if(!('OakTermError' in data.body)){
+    if(!('OakTermErr' in data.body)){
       //return rejected_promise(data);
+      console.log('oakterm_error_handler(): OakTermError key not found, leaving uncaught');
       return Promise.reject(data);
     }
     if(data.body.OakTermErr == consts.ERR_MINOR){
@@ -261,10 +259,12 @@ $(function() {
   }
 
   function get_variable(name){
-    return particle.getVariable({deviceId: current_device.id, name: name+'q',
-                                 auth: access_token})
-      .catch(inject_error(consts.ERR_MINOR,'Error getting variable value (variable: ' + name + ')'))
-      .then(update_variable);
+    return function() {
+      return particle.getVariable({deviceId: current_device.id, name: name+'q',
+                     auth: access_token})
+        .then(update_variable)
+        .catch(inject_error(consts.ERR_MINOR,'Error getting variable value (variable: ' + name + ')'));
+    }
   }
 
   function get_and_dump_variable(event){
@@ -274,19 +274,11 @@ $(function() {
   }
 
   function get_variables(){
-    //var promise=resolved_promise();
     var promise=Promise.resolve();
-    for (var name in device_vars){
-      console.log('get_variables(): name:',name,'promise:',promise);
+    _.each(device_vars, function(variable, name) {
       promise=promise.then(get_variable(name));
-    }
-    //_.each(device_vars, function(variable, name) {
-    //  promise=promise.then(get_variable(name));
-    //});
-    console.log('get_variables() finished, promise: ',promise);
-
+    });
     return promise;
-    //return Promise.reject();
   }
 
   function update_variable(data){
@@ -682,9 +674,7 @@ $(function() {
         get_devinfo()
           .then(update_devinfo)
           .then(get_variables)
-          .then(function(){console.log('Before eh');})
           .catch(oakterm_error_handler)
-          .then(function(){console.log('After eh');});
         },device_info_refresh_interval*1000);
 
       resolve();
