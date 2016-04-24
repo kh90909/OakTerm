@@ -682,9 +682,9 @@ $(function() {
         get_devinfo()
           .then(update_devinfo)
           .then(get_variables)
-          .then(function(){console.log('Before eh, this:';})
+          .then(function(){console.log('Before eh');})
           .catch(oakterm_error_handler)
-          .then(function(){console.log('After eh, this:');});
+          .then(function(){console.log('After eh');});
         },device_info_refresh_interval*1000);
 
       resolve();
