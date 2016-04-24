@@ -1,3 +1,9 @@
+var consts = {
+  ERR_MINOR: 0,
+  ERR_MAJOR: 1,
+  ERR_FATAL: 2
+};
+
 $(function() {
   var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
@@ -29,7 +35,7 @@ $(function() {
       .then(get_variables)
       .then(subscribe_events)
       .then(display_event)
-      .catch(function(err){ console.warn('Error: ', err); });
+      .catch(oakterm_error_handler);
   }
 
   function login(firstRun){
@@ -223,37 +229,68 @@ $(function() {
     terminal_print(htmlstr);
   }
 
-  function rejected_promise(data){
-    return new Promise(function(resolve, reject){
-      reject(data);
-    });
-  }
-
   function gen_err_handler(msg){
     return function(data){
       console.log(msg + ':', data.body.error);
     }
   }
 
+  function inject_error(code,desc){
+    return function(data){
+      console.log('inject_error_func(): start');
+      data.body.OakTermErr=code;
+      data.body.OakTermErrDesc=desc;
+      return Promise.reject(data);
+      //return rejected_promise(data);
+    };
+  }
+
+  function oakterm_error_handler(data){
+    console.log('oakterm_error_handler(): enter');
+    if(!('OakTermError' in data.body)){
+      //return rejected_promise(data);
+      return Promise.reject(data);
+    }
+    if(data.body.OakTermErr == consts.ERR_MINOR){
+      console.log('Minor error: ', data.body.OakTermErrDesc + ':', data.body.error);
+    } else if(data.body.OakTermErr == consts.ERR_MAJOR){
+      console.log('Major error: ', data.body.OakTermErrDesc + ':', data.body.error);
+    } else if(data.body.OakTermErr == consts.ERR_FATAL){
+      console.log('Fatal error: ', data.body.OakTermErrDesc + ':', data.body.error);
+    }
+  }
+
   function get_variable(name){
-    return particle.getVariable({deviceId: current_device.id, name: name,
+    return particle.getVariable({deviceId: current_device.id, name: name+'q',
                                  auth: access_token})
-      .then(update_variable)
-      .catch(gen_err_handler('Error getting variable value'));
+      .catch(inject_error(consts.ERR_MINOR,'Error getting variable value (variable: ' + name + ')'))
+      .then(update_variable);
   }
 
   function get_and_dump_variable(event){
     get_variable(event.target.dataset.variable)
-      .then(dump_variable);
+      .then(dump_variable)
+      .catch(oakterm_error_handler);
   }
 
   function get_variables(){
-    _.each(device_vars, function(variable, name) {
-      get_variable(name);
-    });
+    //var promise=resolved_promise();
+    var promise=Promise.resolve();
+    for (var name in device_vars){
+      console.log('get_variables(): name:',name,'promise:',promise);
+      promise=promise.then(get_variable(name));
+    }
+    //_.each(device_vars, function(variable, name) {
+    //  promise=promise.then(get_variable(name));
+    //});
+    console.log('get_variables() finished, promise: ',promise);
+
+    return promise;
+    //return Promise.reject();
   }
 
   function update_variable(data){
+    console.log('update_variable(): start');
     device_vars[data.body.name].value = data.body.result;
     var localVar = device_vars[data.body.name];
     var result = "";
@@ -317,6 +354,7 @@ $(function() {
             get_devinfo()
               .then(update_devinfo)
               .then(get_variables)
+              .catch(oakterm_error_handler);
           }
           // No break since we want to fall through and display this event
         default:
@@ -369,10 +407,13 @@ $(function() {
 
   $("#refresh").click(function(){
     get_devices()
-      .then(update_devices);
+      .then(update_devices)
+      .catch(oakterm_error_handler);
+
     get_devinfo()
       .then(update_devinfo)
-      .then(get_variables);
+      .then(get_variables)
+      .catch(oakterm_error_handler);
   });
 
   $("#modal-send-event-button").click(function(){
@@ -429,7 +470,9 @@ $(function() {
       .then(update_devinfo)
       .then(get_variables)
       .then(subscribe_events)
-      .then(display_event);
+      .then(display_event)
+      .catch(oakterm_error_handler);
+
   });
 
   $('#sidebar').hover(function(){
@@ -487,7 +530,7 @@ $(function() {
         var slice = file.slice(offset,offset+slice_len);
 
         reader.onload = read_handler;
-        reader.onerror = error_handler;
+        reader.onerror = read_error_handler;
         reader.readAsBinaryString(slice);
       };
 
@@ -501,7 +544,7 @@ $(function() {
         setTimeout(slice_reader,1000);
       }
 
-      function error_handler(e){
+      function read_error_handler(e){
           console.log('Error reading file: ' + e.target.error);
           reset_ui();
       }
@@ -629,7 +672,8 @@ $(function() {
       pollers['update_devices'] = setInterval(function(){
         //console.log('Update device list timer');
         get_devices()
-          .then(update_devices);
+          .then(update_devices)
+          .catch(oakterm_error_handler);
         },device_list_refresh_interval*1000);
 
       if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
@@ -637,7 +681,10 @@ $(function() {
         //console.log('Update device info timer');
         get_devinfo()
           .then(update_devinfo)
-          .then(get_variables);
+          .then(get_variables)
+          .then(function(){console.log('Before eh, this:';})
+          .catch(oakterm_error_handler)
+          .then(function(){console.log('After eh, this:');});
         },device_info_refresh_interval*1000);
 
       resolve();
