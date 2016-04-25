@@ -7,6 +7,8 @@ var consts = {
 $(function() {
   var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
+  var API_retries=3;
+  var API_retry_delay=1000; // milliseconds
   var claim_code = "";
   var claimed_devices = "";
   var all_devices;
@@ -27,13 +29,13 @@ $(function() {
   function do_login(firstRun){
     login(firstRun)
       .then(restore_settings)
-      .then(get_devices)
+      .then(retry_promise(get_devices,on_fatal_error,API_retries,API_retry_delay))
       .then(update_devices)
-      .then(get_devinfo)
+      .then(retry_promise(get_devinfo,on_fatal_error,API_retries,API_retry_delay))
       .then(update_devinfo)
       .then(start_pollers)
       .then(get_variables)
-      .then(subscribe_events)
+      .then(retry_promise(subscribe_events,on_fatal_error,API_retries,API_retry_delay))
       .then(display_event)
       .catch(oakterm_error_handler);
   }
@@ -102,7 +104,16 @@ $(function() {
   }
 
   function get_devices(){
+    var error_msg = 'Error getting a list of your devices from the Particle Cloud';
     return particle.listDevices({auth: access_token})
+      .catch(inject_error(consts.ERR_FATAL,error_msg));
+  }
+
+  function dev_namestr(device){
+    var name = "";
+    if(device.name) name += device.name + ' ';
+    name += '(' + device.id.slice(-6) + ')';
+    return name;
   }
 
   function update_devices(devices){
@@ -112,10 +123,7 @@ $(function() {
     $("#deviceIDs").html('');
 
     _.each(all_devices, function(item, idx) {
-      var name = "";
-      if(item.name) name += item.name+' ';
-      name += '('+item.id.slice(-6)+')';
-
+      var name = dev_namestr(item);
       var curId = current_device ? current_device.id : false;
       var $opt = $('<option>', {value: item.id, selected: (curId == item.id), html: name });
       $("#deviceIDs").append($opt);
@@ -128,7 +136,9 @@ $(function() {
   }
 
   function get_devinfo(){
-    return particle.getDevice({deviceId: current_device.id, auth: access_token});
+    var error_msg = 'Error getting device info via the Particle Cloud for device: ' + dev_namestr(current_device);
+    return particle.getDevice({deviceId: current_device.id, auth: access_token})
+      .catch(inject_error(consts.ERR_FATAL,error_msg));
   }
 
   function update_devinfo(data){
@@ -229,12 +239,6 @@ $(function() {
     terminal_print(htmlstr);
   }
 
-  function gen_err_handler(msg){
-    return function(data){
-      console.log(msg + ':', data.body.error);
-    }
-  }
-
   function inject_error(code,desc){
     return function(data){
       data.body.OakTermErr=code;
@@ -258,12 +262,50 @@ $(function() {
     }
   }
 
+  function delayed_reject(milliseconds){
+    return function(data){
+      return new Promise(function(resolve,reject){
+        setInterval(function(){ reject(data); },milliseconds);
+      });
+    };
+  }
+
+  function retry_promise(async_func,error_func,retries,ms_delay) {
+    return function recurse(){
+      var p = async_func();
+      for(var i = 0; i < retries; i++) {
+        p = p.catch(delayed_reject(ms_delay)).catch(async_func);
+      }
+      p = p.catch(error_func).catch(recurse);
+
+      return p;
+    }
+  }
+
+  $('#modal-error-logout-button').click(logout);
+
+  function on_fatal_error(data){
+    error_modal_active = true;
+    $('#modal-error-message').html(data.body.OakTermErrDesc + '. ' + data.body.error_description);
+    var promise = new Promise(function(resolve, reject){
+      $('#modal-error-retry-button').on('click',function(){
+        error_modal_active = false;
+        $('#modal-error-retry-button').off('click');
+        reject(data);
+      });
+    });
+    console.log('on_fatal_error(): Showing modal and waiting for promise to resolve on close');
+    $('#modal-error').modal('show');
+    return promise;
+  }
+
+
   function get_variable(name){
     return function() {
-      return particle.getVariable({deviceId: current_device.id, name: name+'q',
+      return particle.getVariable({deviceId: current_device.id, name: name,
                      auth: access_token})
         .then(update_variable)
-        .catch(inject_error(consts.ERR_MINOR,'Error getting variable value (variable: ' + name + ')'));
+        .catch(inject_error(consts.ERR_MINOR,'Error getting variable value via the Particle Cloud (variable: ' + name + ')'));
     }
   }
 
@@ -309,7 +351,10 @@ $(function() {
   }
 
   function subscribe_events(){
-    return particle.getEventStream({deviceId: current_device.id,auth: access_token});
+    var error_msg = 'Error subscribing to the Particle Cloud event stream for device: ' + dev_namestr(current_device);
+    return particle.getEventStream({deviceId: current_device.id,auth: access_token})
+      .catch(inject_error(consts.ERR_FATAL,error_msg));
+
   }
 
   function format_time_span(optdate) {
@@ -391,21 +436,17 @@ $(function() {
     send_cmd("user mode");
   });
 
-  $("#logout").click(function(){
+  $("#logout").click(logout);
+
+  function logout(){
     localStorage.removeItem("access_token");
     localStorage.removeItem("current_device");
     location.reload();
-  });
+  }
 
   $("#refresh").click(function(){
-    get_devices()
-      .then(update_devices)
-      .catch(oakterm_error_handler);
-
-    get_devinfo()
-      .then(update_devinfo)
-      .then(get_variables)
-      .catch(oakterm_error_handler);
+    refresh_devices();
+    refresh_devinfo();
   });
 
   $("#modal-send-event-button").click(function(){
@@ -658,24 +699,29 @@ $(function() {
       })
   }
 
+  function refresh_devices(){
+    var promise=Promise.resolve();
+    promise.then(retry_promise(get_devices,on_fatal_error,
+                               API_retries,API_retry_delay))
+      .then(update_devices);
+  }
+
+  function refresh_devinfo(){
+    var promise=Promise.resolve();
+    promise.then(retry_promise(get_devinfo,on_fatal_error,
+                               API_retries,API_retry_delay))
+      .then(update_devinfo)
+      .then(get_variables)
+      .catch(oakterm_error_handler)
+  }
+
   function start_pollers(){
     return new Promise(function(resolve, reject){
       if( pollers.update_devices) clearTimeout( pollers.update_devices);
-      pollers['update_devices'] = setInterval(function(){
-        //console.log('Update device list timer');
-        get_devices()
-          .then(update_devices)
-          .catch(oakterm_error_handler);
-        },device_list_refresh_interval*1000);
+      pollers['update_devices'] = setInterval(refresh_devices,device_list_refresh_interval*1000);
 
       if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
-      pollers['update_devinfo'] = setInterval(function(){
-        //console.log('Update device info timer');
-        get_devinfo()
-          .then(update_devinfo)
-          .then(get_variables)
-          .catch(oakterm_error_handler)
-        },device_info_refresh_interval*1000);
+      pollers['update_devinfo'] = setInterval(refresh_devinfo,device_info_refresh_interval*1000);
 
       resolve();
     });
