@@ -651,7 +651,10 @@ $(function() {
   function get_setting(name){
     var val = settings[name];
     if(val === 'true') val = true;
-    if(val === 'false') val = false;
+    else if(val === 'false') val = false;
+    else if(val === '\\r\\n') val = '\r\n';
+    else if(val === '\\n') val = '\n';
+    else if(val === '\\r') val = '\r';
     return val;
   }
 
