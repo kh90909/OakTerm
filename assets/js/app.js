@@ -96,7 +96,11 @@ $(function() {
 
   function login_err(err){
     $('#login_button').attr('disabled',false);
-    $('#login_error').html(err.errorDescription.split(' - ')[1]);
+    var errMsg = err.errorDescription
+      ? err.errorDescription.split(' - ')[1]
+      : "Login failed - please try again.";
+
+    $('#login_error').html(errMsg);
     $('#login_error').show();
 
     if(err.body.error == 'invalid_token'){
@@ -382,9 +386,13 @@ $(function() {
   function dump_send_event_err(data) {
     delete data.event['auth'];
     var eventTime = format_time_span();
+    var errMsg = data.response.errorDescription
+      ? data.response.errorDescription.split(' - ')[1]
+      : "Login failed - please try again.";
+
     var htmlstr='<div class="text_sentevent">' + eventTime + 'Error sending event: ' +
                 JSON.stringify(data.event) + '. ' +
-                data.response.errorDescription.split(' - ')[1] + '</div>';
+                errMsg + '</div>';
     terminal_print(htmlstr);
   }
 
