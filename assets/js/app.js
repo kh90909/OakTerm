@@ -482,7 +482,7 @@ $(function() {
     }
   }
 
-  $('#settings input, #settings select').on('change', save_settings);
+  $('#settings input, #settings select, #rememberme').on('change', save_settings);
 
   // Bootstrap 4 alpha has a bug where events on radio buttons in a btn-group
   // don't fire (https://github.com/twbs/bootstrap/issues/17599), so listen for
@@ -588,7 +588,20 @@ $(function() {
   }
 
   function save_settings(){
-    var newSettings = $('#settings').serializeArray();
+    var newSettings = [];
+    $('[setting]').each(function(){
+      if($(this).attr('for')){
+        // Handle button toggle groups
+        var name = $(this).attr('for');
+        newSettings.push({name: name, value: $('[name="'+name+'"]').prop('checked') });
+      } else if($(this).attr('type') == 'checkbox'){
+        newSettings.push({name: $(this).attr('name'), value: $(this).prop('checked') });
+      } else{
+        newSettings.push({name: $(this).attr('name'), value: $(this).val() });
+      }
+
+    });
+
     localStorage.setItem("settings", JSON.stringify(newSettings));
     console.log( 'Saved settings:', newSettings);
   }
@@ -600,6 +613,7 @@ $(function() {
       {"name":"autoscroll","value":"onEvent"},
       {"name":"lineends","value":"rn"},
       {"name":"subenter","value":"true"},
+      {"name":"rememberme","value":"false"},
       {"name":"show-stdin","value":"true"},
       {"name":"show-stdout","value":"true"},
       {"name":"show-stderr","value":"true"},
@@ -647,6 +661,8 @@ $(function() {
             $(this).parent().toggleClass('active', $(this).val() == item.value);
           }
         });
+      } else if($item.attr('type') == 'checkbox'){
+        console.log('sdlfkj')
       } else{
         $item.val(item.value);
       }
