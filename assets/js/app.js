@@ -617,7 +617,7 @@ $(function() {
     var new_settings;
     var saved_settings = localStorage.getItem("settings");
     var defaults = {
-      "autoscroll": "pageBtm",
+      "autoscroll": "onEvent",
       "lineends": "\\r\\n",
       "scrollbars": "false",
       "show-devadm": "true",
