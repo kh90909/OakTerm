@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-scroll-bars">
   <head>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -106,7 +106,7 @@
             </span>
 
             <div class="flex-input">
-              <select id="deviceIDs" class="form-control">
+              <select id="deviceIDs" class="form-control c-select">
                 <option>--</option>
               </select>
             </div>
@@ -165,37 +165,39 @@
               </div>
             </div>
             <div class="collapse" id="func-details">
-              <table class="table table-compact" id="funcstable">
-                <tbody id="funcstbody">
-                  <tr id="row-nofuncs">
-                    <td class="centered">
-                      <i>None exposed by firmware</i>
-                    </td>
-                  </tr>
-                  <script id="func-template" type="text/html">
-                    <td>
-                      <div>
-                        <a role="button" class="func" id="{{param1}}-row" data-target="[id='func-{{param1}}']" data-toggle="collapse">
-                          int {{param1}}(String arg);
-                        </a>
-                      </div>
-                      <div id="func-{{param1}}" class="collapse">
-                        <label for="arg-{{param1}}" class="func-arg-label">
-                          &#9495;&nbsp;arg
-                        </label>
-                        <div class="input-group input-group-sm">
-                          <input type="text" id="arg-{{param1}}" class=" form-control form-control-func-arg">
-                          <span class="input-group-btn">
-                            <button id="btn-{{param1}}" type="button" class="btn btn-primary">
-                              Call
-                            </button>
-                          </span>
+              <div class="wrap">
+                <table class="table table-compact" id="funcstable">
+                  <tbody id="funcstbody">
+                    <tr id="row-nofuncs">
+                      <td class="centered">
+                        <i>None exposed by firmware</i>
+                      </td>
+                    </tr>
+                    <script id="func-template" type="text/html">
+                      <td>
+                        <div>
+                          <a role="button" class="func" id="{{param1}}-row" data-target="[id='func-{{param1}}']" data-toggle="collapse">
+                            int {{param1}}(String arg);
+                          </a>
                         </div>
-                      </div>
-                    </td>
-                  </script>
-                </tbody>
-              </table>
+                        <div id="func-{{param1}}" class="collapse">
+                          <label for="arg-{{param1}}" class="func-arg-label">
+                            &#9495;&nbsp;arg
+                          </label>
+                          <div class="input-group input-group-sm">
+                            <input type="text" id="arg-{{param1}}" class=" form-control form-control-func-arg">
+                            <span class="input-group-btn">
+                              <button id="btn-{{param1}}" type="button" class="btn btn-primary">
+                                Call
+                              </button>
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </script>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </fieldset>
         </div>
@@ -226,24 +228,29 @@
       </div>
 
       <footer id="footer" class="container-fluid">
-        <div class="col-md-10">
-          <div class="flex-input">
-            <input type="text" class="form-control" id="senddata" placeholder="Send Data">
-            <button id="send" type="submit" class="btn btn-success hidden-sm-down"><i class="fa fa-paper-plane"></i> Send Data</button>
+        <form id="send-data-form">
+          <div class="col-md-10">
+            <div class="flex-input">
+              <input type="text" class="form-control" id="senddata" placeholder="Send Data">
+              <button id="send-lg" type="button" class="btn btn-success hidden-sm-down" data-submit>
+                <i class="fa fa-paper-plane"></i> Send Data
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="col-md-2 col-xs-6 align-right sm-align-left">
-          <button class="btn btn-info"  data-toggle="modal" data-target="#modal-settings">
-            <i class="fa fa-cog"></i></button>
-          <button class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">
-            <i class="fa fa-sign-out"></i></button>
-        </div>
+          <div class="col-md-2 col-xs-6 align-right sm-align-left">
+            <button type="button" class="btn btn-info"  data-toggle="modal" data-target="#modal-settings">
+              <i class="fa fa-cog"></i></button>
+            <button type="button" class="btn btn-secondary" id="logout" data-toggle="tooltip" data-placement="top" title="Sign Out">
+              <i class="fa fa-sign-out"></i></button>
+          </div>
 
-        <div class="col-xs-6 hidden-md-up align-right">
-          <button id="send" type="submit" class="btn btn-success"><i class="fa fa-paper-plane"></i> Send Data</button>
-        </div>
-
+          <div class="col-xs-6 hidden-md-up align-right">
+            <button id="send-sm" type="button" class="btn btn-success" data-submit>
+              <i class="fa fa-paper-plane"></i> Send Data
+            </button>
+          </div>
+        </form>
       </footer><!-- #footer -->
     </div><!-- #terminal -->
 
@@ -258,9 +265,9 @@
               <div class="form-group row">
                 <label for="autoscroll" class="col-sm-3 form-control-label">Auto-Scroll</label>
                 <div class="col-sm-9">
-                  <select name="autoscroll" id="autoscroll" class="form-control">
-                    <option value="pageBtm">When at page bottom</option>
+                  <select name="autoscroll" id="autoscroll" class="form-control c-select">
                     <option value="onEvent">When new events arrive</option>
+                    <option value="pageBtm">When at page bottom</option>
                     <option value="none">Never</option>
                   </select>
                 </div>
@@ -269,11 +276,11 @@
               <div class="form-group row">
                 <label for="lineends" class="col-sm-3 form-control-label">Line Endings</label>
                 <div class="col-sm-9">
-                  <select name="lineends" id="lineends" class="form-control">
-                    <option value="r">\r</option>
-                    <option value="n">\n</option>
-                    <option value="rn">\r\n</option>
-                    <option value="none">none</option>
+                  <select name="lineends" id="lineends" class="form-control c-select">
+                    <option value="\r">\r</option>
+                    <option value="\n">\n</option>
+                    <option value="\r\n">\r\n</option>
+                    <option value="false">none</option>
                   </select>
                 </div>
               </div>
@@ -281,14 +288,26 @@
               <div class="form-group row">
                 <label for="subenter" class="col-sm-3 form-control-label">Submit on Enter</label>
                 <div class="col-sm-9">
-                  <div class="c-inputs-stacked">
-                    <label class="c-input c-radio">
-                      <input id="subenter-on" name="subenter" type="radio" value="true">
-                      <span class="c-indicator"></span> Enabled
+                  <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-secondary">
+                      <input type="radio" name="subenter" id="subenter-on" value="true"> Enabled
                     </label>
-                    <label class="c-input c-radio">
-                      <input id="subenter-off" name="subenter" type="radio" value="false">
-                      <span class="c-indicator"></span> Disabled
+                    <label class="btn btn-secondary">
+                      <input type="radio" name="subenter" id="subenter-off" value="false"> Disabled
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label for="scrollbars" class="col-sm-3 form-control-label">Visible Scroll Bars</label>
+                <div class="col-sm-9">
+                  <div class="btn-group" data-toggle="buttons">
+                    <label for="scrollbars-on" class="btn btn-secondary">
+                      <input type="radio" name="scrollbars" id="scrollbars-on" value="true"> Enabled
+                    </label>
+                    <label for="scrollbars-off" class="btn btn-secondary active">
+                      <input type="radio" name="scrollbars" id="scrollbars-off" value="false" checked> Disabled
                     </label>
                   </div>
                 </div>
@@ -392,7 +411,7 @@
                       <input type="radio" id="show-timestamp-on" name="show-timestamp" autocomplete="off" value="true" checked> On
                     </label>
                     <label for="show-timestamp-off" class="btn btn-sm btn-secondary">
-                      <input type="radio" for="show-timestamp-off" name="show-timestamp" autocomplete="off" value="false"> Off
+                      <input type="radio" id="show-timestamp-off" name="show-timestamp" autocomplete="off" value="false"> Off
                     </label>
                   </div>
                   <label for="show-timestamp" class="form-control-sm form-control-label">Timestamps</label>

@@ -16,17 +16,6 @@ $(function() {
 
   $('[data-toggle="tooltip"]').tooltip();
 
-  $("#login_button").click(function(e){
-    e.preventDefault();
-    do_login();
-  });
-
-  $("#login input").keypress(function(event) {
-    if (event.which == 13) {
-        do_login();
-    }
-  });
-
   do_login(true);
 
   function do_login(firstRun){
@@ -115,7 +104,7 @@ $(function() {
   }
 
   function update_devices(devices){
-    console.log('Devices: ', devices);
+    //console.log('Devices: ', devices);
     all_devices = devices.body;
 
     $("#deviceIDs").html('');
@@ -232,8 +221,7 @@ $(function() {
   }
 
   function dump_function(func,arg,result){
-    var eventTime = format_time_span();
-    var htmlstr='<div class="text_function">' + eventTime + 'Function call ' +
+    var htmlstr='<div class="text_function">Function call ' +
                 func + '("' + arg + '") returned ' + result + '</div>';
     terminal_print(htmlstr);
   }
@@ -262,8 +250,7 @@ $(function() {
   function dump_variable(event){
     var id=event.target.dataset.variable;
     var device_var = device_vars[id]
-    var eventTime = format_time_span();
-    var htmlstr='<div class="text_variable">' + eventTime + 'Variable '+id+': ' +
+    var htmlstr='<div class="text_variable">Variable '+id+': ' +
                 device_var.value +
                 ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
     terminal_print(htmlstr);
@@ -308,12 +295,22 @@ $(function() {
             event.data='<no data>';
           }
       }
-      eventTime = format_time_span(event.published_at);
       htmlstr=(event.data + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br>$2');
-      htmlstr='<div class="'+event_class+'">'+eventTime+prestr+htmlstr+'</div>';
-      terminal_print(htmlstr);
+      htmlstr='<div class="'+event_class+'">'+prestr+htmlstr+'</div>';
+      terminal_print(htmlstr, event.published_at);
     });
   }
+
+  $("#login_button").click(function(e){
+    e.preventDefault();
+    do_login();
+  });
+
+  $("#login input").keypress(function(event) {
+    if (event.which == 13) {
+        do_login();
+    }
+  });
 
   $("#reboot-all").click(function(e){
     e.preventDefault();
@@ -331,14 +328,6 @@ $(function() {
 
   $("#usermode").click(function(){
     send_cmd("user mode");
-  });
-
-  $("#send").click(function(){
-    var data=$("#senddata").val()
-    var eventTime = format_time_span();
-    var htmlstr='<div class="text_stdin">' + eventTime + data + '</div>';
-    send_data(data);
-    terminal_print(htmlstr);
   });
 
   $("#logout").click(function(){
@@ -377,8 +366,7 @@ $(function() {
 
   function dump_sent_event(data) {
     delete data.event['auth'];
-    var eventTime = format_time_span();
-    var htmlstr='<div class="text_sentevent">' + eventTime + 'Sent event: ' +
+    var htmlstr='<div class="text_sentevent">Sent event: ' +
                 JSON.stringify(data.event) + '</div>';
     terminal_print(htmlstr);
   }
@@ -388,7 +376,7 @@ $(function() {
     var eventTime = format_time_span();
     var errMsg = data.response.errorDescription
       ? data.response.errorDescription.split(' - ')[1]
-      : "Login failed - please try again.";
+      : "No error description provided.";
 
     var htmlstr='<div class="text_sentevent">' + eventTime + 'Error sending event: ' +
                 JSON.stringify(data.event) + '. ' +
@@ -406,8 +394,7 @@ $(function() {
       stop_stream();
     }
 
-    var eventTime = format_time_span();
-    var htmlStr = '<div class="text_devadm">' + eventTime + 'Device change: '+current_device.name+'</div>';
+    var htmlStr = '<div class="text_devadm">Device change: '+current_device.name+'</div>';
     terminal_print(htmlStr);
 
     $('#devtable tbody').html('');
@@ -439,6 +426,22 @@ $(function() {
 
   $('#file-input').on('change',send_file);
 
+  $('#send-data-form').on('submit', function(e){
+    e.preventDefault();
+    var data=$("#senddata").val()
+    var htmlstr='<div class="text_stdin">'+ data + '</div>';
+    send_data(data);
+    terminal_print(htmlstr);
+  });
+
+  $('#send-data-form [data-submit]').on('click', function(){
+    $(this).parents('form').submit();
+  });
+
+  $('#send-data-form input').on('keypress', function(e){
+    if( (e.which == 13) && !get_setting('subenter')) e.preventDefault();
+  });
+
   function send_file(e){
     console.log('send_file(e): e:',e);
     if(e.target.files && e.target.files[0]){
@@ -448,7 +451,7 @@ $(function() {
 
       // Disable user "Send Data" button so that it's not possible to send
       // in the middle of the file upload
-      $("#send").addClass('disabled');
+      $("#send-data-form [type='submit']").addClass('disabled');
       slice_reader();
 
       function slice_reader(){
@@ -477,24 +480,35 @@ $(function() {
 
       function reset_ui(){
           $('#file-input').val(null);
-          $("#send").removeClass('disabled');
+          $("#send-data-form [type='submit']").removeClass('disabled');
       }
     }
   }
 
   $('#settings input, #settings select').on('change', save_settings);
+  $('#settings [data-toggle="buttons"] .btn').on('click', function(){
+    // Needed to force Bootstrap to bind the actual radios to these btns
+    $(this).find('[type="radio"]').prop('checked', 'true');
+    save_settings();
+  });
+
+  $('#settings label[for^="scrollbars"]').on('change', function(){
+    if( $(this).find('input').val() == 'true'){
+      $('html').removeClass('no-scroll-bars');
+    } else{
+      $('html').addClass('no-scroll-bars');
+    }
+  });
 
   // Bootstrap 4 alpha has a bug where events on radio buttons in a btn-group
   // don't fire (https://github.com/twbs/bootstrap/issues/17599), so listen for
   // the event on the labels as a workaround.
-
   $('#settings label[for^="show-"]').on('change', show_hide_content);
 
   function show_hide_content(e){
-    save_settings();
     var id_parts = e.target.htmlFor.split('-');
-    $('#content').toggleClass('hide_' + id_parts[1], id_parts[2] == 'off')
-    console.log('show_hide_content(): Turning', id_parts[1], id_parts[2]);
+    $('#content').toggleClass('hide_' + id_parts[1], id_parts[2] == 'off');
+    //console.log('show_hide_content(): Turning', id_parts[1], id_parts[2]);
   }
 
   $('#device-details,#var-details,#func-details').on('hide.bs.collapse', toggle_arrow);
@@ -534,9 +548,23 @@ $(function() {
     $('[data-target="#'+e.target.id+'"] i').toggleClass('fa-angle-up fa-angle-down');
   }
 
-  function terminal_print(content){
+  function terminal_print(content, specific_time){
+    var eventTime = format_time_span(specific_time);
+    var $content = $(content).prepend(eventTime);
+    content = $content[0];
+
     $("#content").append(content);
-    $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+
+    switch(get_setting('autoscroll')){
+      case 'pageBtm':
+        if((window.innerHeight + window.scrollY) >= (document.body.offsetHeight-30)) {
+          $("html, body").animate({ scrollTop: $(document).height() }, 250);
+        }
+        break;
+      case 'onEvent':
+        $("html, body").animate({ scrollTop: $(document).height() }, 250);
+        break;
+    }
   }
 
   function send_cmd(cmd){
@@ -545,6 +573,8 @@ $(function() {
   }
 
   function send_data(data){
+    var lineEnd = get_setting('lineends');
+    if(lineEnd) data += lineEnd;
     console.log("Sending Data: " + data);
     particle.publishEvent({name: 'oak/device/stdin/' + current_device.id, data: data, isPrivate: true, auth: access_token});
   }
@@ -560,8 +590,7 @@ $(function() {
       })
       .then(update_devices)
       .then(function(device){
-        var eventTime = format_time_span();
-        var htmlstr='<div class="text_devadm">' + eventTime + 'Device Rename: '+oldName+' to '+newName+'</div>';
+        var htmlstr='<div class="text_devadm">Device Rename: '+oldName+' to '+newName+'</div>';
         terminal_print(htmlstr);
       })
   }
@@ -570,14 +599,14 @@ $(function() {
     return new Promise(function(resolve, reject){
       if( pollers.update_devices) clearTimeout( pollers.update_devices);
       pollers['update_devices'] = setInterval(function(){
-        console.log('Update device list timer');
+        //console.log('Update device list timer');
         get_devices()
           .then(update_devices);
         },device_list_refresh_interval*1000);
 
       if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
       pollers['update_devinfo'] = setInterval(function(){
-        console.log('Update device info timer');
+        //console.log('Update device info timer');
         get_devinfo()
           .then(update_devinfo)
           .then(get_variables);
@@ -588,28 +617,29 @@ $(function() {
   }
 
   function save_settings(){
-    var newSettings = $('#settings').serializeArray();
-    localStorage.setItem("settings", JSON.stringify(newSettings));
-    console.log( 'Saved settings:', newSettings);
+    settings = _.object(_.map($('#settings').serializeArray(), _.values));
+    localStorage.setItem("settings", JSON.stringify(settings));
+    console.log( 'Saved settings:', settings);
   }
 
   function get_settings(){
     var new_settings;
     var saved_settings = localStorage.getItem("settings");
-    var defaults = [
-      {"name":"autoscroll","value":"onEvent"},
-      {"name":"lineends","value":"rn"},
-      {"name":"subenter","value":"true"},
-      {"name":"show-stdin","value":"true"},
-      {"name":"show-stdout","value":"true"},
-      {"name":"show-stderr","value":"true"},
-      {"name":"show-event","value":"true"},
-      {"name":"show-sentevent","value":"true"},
-      {"name":"show-variable","value":"true"},
-      {"name":"show-function","value":"true"},
-      {"name":"show-devadm","value":"true"},
-      {"name":"show-timestamp","value":"true"}
-    ];
+    var defaults = {
+      "autoscroll": "onEvent",
+      "lineends": "\\r\\n",
+      "scrollbars": "false",
+      "show-devadm": "true",
+      "show-event": "true",
+      "show-function": "true",
+      "show-sentevent": "true",
+      "show-stderr": "true",
+      "show-stdin": "true",
+      "show-stdout": "true",
+      "show-timestamp": "true",
+      "show-variable": "true",
+      "subenter": "true"
+    };
 
     if(saved_settings){
       try{
@@ -627,6 +657,16 @@ $(function() {
     return new_settings;
   }
 
+  function get_setting(name){
+    var val = settings[name];
+    if(val === 'true') val = true;
+    else if(val === 'false') val = false;
+    else if(val === '\\r\\n') val = '\r\n';
+    else if(val === '\\n') val = '\n';
+    else if(val === '\\r') val = '\r';
+    return val;
+  }
+
   function restore_settings(){
     // App settings
     try{
@@ -635,26 +675,29 @@ $(function() {
       current_device = null;
     }
 
-    // User settings modal and content show/hide settings
-    _.each(settings, function(item){
-      console.log('restore_settings(): Restoring var',item.name,'value =',item.value);
+    console.log('restoring settings:', settings);
 
-      var $item = $('[name="'+item.name+'"]');
+    // User settings modal and content show/hide settings
+    _.each(settings, function(value, key){
+      var $item = $('[name="'+key+'"]');
       if($item.attr('type') == 'radio'){
         $item.each(function(){
-          $(this).prop('checked', $(this).val() == item.value);
+          $(this).prop('checked', $(this).val() == value);
           if($(this).parent().hasClass('btn')){
-            $(this).parent().toggleClass('active', $(this).val() == item.value);
+            $(this).parent().toggleClass('active', $(this).val() == value);
           }
         });
       } else{
-        $item.val(item.value);
+        $item.val(value);
       }
 
-      if ( item.name.slice(0,5) == 'show-' ) {
-        var item_class = 'hide_' + item.name.slice(5);
-        $('#content').toggleClass(item_class, item.value == 'false')
-        console.log('restore_settings(): Turning', item.name.slice(5), item.value == 'true' ? 'on' : 'off');
+      if ( key.slice(0,5) == 'show-' ) {
+        var item_class = 'hide_' + key.slice(5);
+        $('#content').toggleClass(item_class, value == 'false')
+      }
+
+      if(( key == 'scrollbars') && value === 'true'){
+        $('html').removeClass('no-scroll-bars');
       }
     });
   }
