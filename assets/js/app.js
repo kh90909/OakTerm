@@ -133,6 +133,7 @@ $(function() {
     $("#devstatus").attr('data-status', data.body.connected);
 
     if(_.isEmpty(data.body.variables)){
+      device_vars = {};
       $("#varstbody").html('<td colspan="2" class="centered"><i>None exposed by firmware</i></td>');
     } else{
       var new_vars = _.mapObject(data.body.variables, function(item, key){
@@ -226,10 +227,33 @@ $(function() {
     terminal_print(htmlstr);
   }
 
+  function rejected_promise(data){
+    return new Promise(function(resolve, reject){
+      reject(data);
+    });
+  }
+
+  function gen_err_handler(msg){
+    return function(data){
+      console.log(msg + ':', data.body.error);
+    }
+  }
+
+  function get_variable(name){
+    return particle.getVariable({deviceId: current_device.id, name: name,
+                                 auth: access_token})
+      .then(update_variable)
+      .catch(gen_err_handler('Error getting variable value'));
+  }
+
+  function get_and_dump_variable(event){
+    get_variable(event.target.dataset.variable)
+      .then(dump_variable);
+  }
+
   function get_variables(){
     _.each(device_vars, function(variable, name) {
-      particle.getVariable({deviceId: current_device.id, name: name, auth: access_token})
-        .then(update_variable)
+      get_variable(name);
     });
   }
 
@@ -244,15 +268,18 @@ $(function() {
       result = data.body.result.toString();
     }
 
-    $("[id='"+data.body.name+"']").html(result);
+    $("td[data-variable='"+data.body.name+"']").html(result);
+
+    return data;
   }
 
-  function dump_variable(event){
-    var id=event.target.dataset.variable;
-    var device_var = device_vars[id]
-    var htmlstr='<div class="text_variable">Variable '+id+': ' +
-                device_var.value +
-                ' <span class="var-type-'+device_var.type+'">('+device_var.type+')</span></div>';
+  function dump_variable(data){
+    var device_var = device_vars[data.body.name];
+    var htmlstr='<div class="text_variable">Variable ' +
+                data.body.name +': ' + device_var.value +
+                ' <span class="var-type-' + device_var.type + '">(' +
+                device_var.type+')</span></div>';
+
     terminal_print(htmlstr);
   }
 
@@ -288,6 +315,14 @@ $(function() {
         case 'oak/device/stdout':
           event_class='text_stdout';
           break;
+        case 'spark/status':
+          if(event.data == 'online'){
+            console.log('Detected spark/status - online event. Refreshing info and vars');
+            get_devinfo()
+              .then(update_devinfo)
+              .then(get_variables)
+          }
+          // No break since we want to fall through and display this event
         default:
           event_class='text_event';
           prestr='Event: '+ event.name + ' - ';
@@ -340,7 +375,8 @@ $(function() {
     get_devices()
       .then(update_devices);
     get_devinfo()
-      .then(update_devinfo);
+      .then(update_devinfo)
+      .then(get_variables);
   });
 
   $("#modal-send-event-button").click(function(){
@@ -384,7 +420,7 @@ $(function() {
     terminal_print(htmlstr);
   }
 
-  $(document).on('click', '#varstable [data-variable]', dump_variable);
+  $(document).on('click', '#varstable [data-variable]', get_and_dump_variable);
 
   $("#deviceIDs").on('change',function(){
     current_device= _.findWhere(all_devices, {id: this.value});
@@ -400,6 +436,7 @@ $(function() {
     $('#devtable tbody').html('');
     get_devinfo()
       .then(update_devinfo)
+      .then(get_variables)
       .then(subscribe_events)
       .then(display_event);
   });
