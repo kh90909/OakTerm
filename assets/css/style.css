@@ -53,11 +53,16 @@
 
 
 /* Global styling */
-html{ font-size:14px; overflow-y: scroll !important;}
+html{ font-size:14px; /*overflow-y: scroll !important;*/}
 body, html{ background: #252830; color:#fff; }
 .align-right{ text-align: right; }
 .float-right{ float:right; }
 .center{ text-align: center; }
+.flush-right {
+    padding-right: 0;
+    overflow-x: hidden;
+}
+
 ::-webkit-scrollbar {
     width: 12px;
 }
@@ -71,19 +76,19 @@ body, html{ background: #252830; color:#fff; }
 ::-webkit-scrollbar-thumb {
     -webkit-border-radius: 3px;
     border-radius: 3px;
-    background: rgba(67,72,87,0.8);
+    background: rgba(167,72,87,0.8);
     -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
 }
 ::-webkit-scrollbar-thumb:window-inactive {
-  background: rgba(67,72,87,0.4);
+  background: rgba(167,72,87,0.4);
 }
 
 /* Bootstrap Overrides */
-html.no-scroll-bars{ overflow-y: auto !important;}
+/*html.no-scroll-bars{ overflow-y: auto !important;}
 html.no-scroll-bars body::-webkit-scrollbar,
 html.no-scroll-bars .fixed-sidebar::-webkit-scrollbar{ display: none }
 body.modal-open { overflow: hidden!important; }
-body.modal-open::-webkit-scrollbar{ display: none }
+body.modal-open::-webkit-scrollbar{ display: none }*/
 
 .form-control:not(.form-control-func-arg) {
   display: block;
@@ -185,10 +190,54 @@ table.compact td{
   width:100%;
   z-index: 2;
 }
+
 #content{
   font-family: Consolas, monospace, sans-serif;
+}
+
+
+/* Scrollbar show / hide */
+
+#sidebar {
+  padding-right: 8px;
+  visibility: visible;
+  overflow-x: hidden;
+}
+
+.outer-container {
   padding-top:70px;
   padding-bottom:70px;
+  height: 100vh;
+}
+
+.padding-container {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  height: 100%;
+}
+    
+.scrollbar-container {
+  overflow-y: scroll;
+  visibility: visible;
+  height: 100%;
+}
+
+.inner-container {
+  margin-right: 4px;
+  visibility: visible;
+  height: 100%;
+}
+    
+.scrollbar-container:hover{
+  visibility: visible;
+}
+
+.no-scroll-bars .scrollbar-container:not(:hover) {
+    visibility: hidden;
+}
+
+body {
+    overflow: hidden;
 }
 
 /* Modal */
@@ -206,6 +255,7 @@ table.compact td{
 }
 .modal .has-danger .form-control{ border-color:#d9534f; }
 .modal .has-warning .form-control{ border-color:#f0ad4e; }
+
 /* Sidebar and Controls */
 #show-sidebar{
   color:#fff;

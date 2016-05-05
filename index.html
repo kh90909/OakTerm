@@ -96,8 +96,8 @@
         </form>
       </nav>
 
-      <div class="container-fluid">
-        <div id="sidebar" class="col-md-3 fixed-sidebar">
+      <div class="container-fluid flush-right">
+        <div id="sidebar-container" class="col-md-3 fixed-sidebar outer-container"><div class="scrollbar-container"><div class="padding-container"><div id="sidebar" class="inner-container">
           <fieldset class="form-group">
             <label for="deviceIDs"><h5>Device:</h5> </label>
             <span id="devstatus" data-status="false">
@@ -200,9 +200,9 @@
               </div>
             </div>
           </fieldset>
-        </div>
+        </div></div></div></div>
 
-        <div id="content" class="col-md-9 col-md-push-3">
+        <div class="col-md-9 col-md-push-3 outer-container flush-right"><div class="scrollbar-container"><div class="padding-container"><div id="content" class="inner-container">
             <div class="text_stdin">Text sent to device via stdin event</div>
             <div class="text_stdout">Text from device via stdout event</div>
             <div class="text_stderr">Text received via stderr event</div>
@@ -224,7 +224,7 @@
             <p>Text should wrap and never scroll horizontally.</p>
             <p>List of devices should refresh whenever refresh is pressed and every 60 seconds, list of registered functions, variables, and device connected status should refresh when refresh is hit and every 10 seconds - those two times should be readily configurable from variables at the top of the javascript.</p>
             <p>Should work in semi modern Firefox and Chrome, if a library is used (besides ParticleJS/SparkJS which will be 100% necessary) jQuery prefered but other libraries OK as well.</p>
-        </div><!-- #content -->
+        </div></div></div></div><!-- #content -->
       </div>
 
       <footer id="footer" class="container-fluid">
