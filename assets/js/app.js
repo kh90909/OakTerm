@@ -1,7 +1,8 @@
 var consts = {
   ERR_MINOR: 0,
   ERR_MAJOR: 1,
-  ERR_FATAL: 2
+  ERR_FATAL: 2,
+  ERR_LOGIN: 3
 };
 
 $(function() {
@@ -25,13 +26,18 @@ $(function() {
 
   $('[data-toggle="tooltip"]').tooltip();
 
-  do_login(true);
+  if(access_token){
+    do_login(true);
+  }else{
+    show_login();
+  }
 
   function do_login(firstRun){
     // The promise chain is split into two arms after start_pollers so that
     // a MINOR_ERR in get_variables doesn't block subscribe_events
 
     var pr = login(firstRun)
+      .then(login_success)
       .then(restore_settings)
       .then(retry_promise(get_devices,oakterm_error_handler,API_retries,API_retry_delay))
       .then(update_devices)
@@ -48,32 +54,43 @@ $(function() {
   }
 
   function login(firstRun){
+    var action;
     $('#login_error').hide();
 
-    if(!access_token){
+    if(!firstRun){ // Login button clicked, so use email and pass
       var email = $('#login_email').val();
       var pass = $('#login_password').val();
 
-      if(!firstRun){
-        return particle.login({
-          username: email,
-          password: pass
-        }).then(login_success, login_err);
-      } else{
-        return show_login('Missing credentials');
-      }
-    } else {
-      return particle.listDevices({ auth: access_token }).then(login_success, login_err);
+      action = particle_login(email,pass);
+    }
+    else if(access_token){ // first run, so use access_token
+      action = verify_token;
+    }
+    else{
+      console.log('This should never happen: firstRun == True and no access_token in login(). Please report a bug.');
+      return Promise.reject();
+    }
+
+    return Promise.resolve()
+      .then(retry_promise(action,oakterm_error_handler,
+                          API_retries,API_retry_delay));
+  }
+
+  function particle_login(email, pass){
+    return function(){
+      return particle.login({username: email, password: pass})
+        .catch(inject_error(consts.ERR_LOGIN,'Login failed'));
     }
   }
 
-  function show_login(rejectMsg){
-    return new Promise(function(resolve, reject){
-      $('#terminal').fadeOut(150, function(){
-        $('#login').fadeIn(150, set_heights);
-        if( rejectMsg) reject(rejectMsg);
-        else resolve();
-      });
+  function verify_token(){
+    return particle.listDevices({ auth: access_token })
+      .catch(inject_error(consts.ERR_LOGIN,'Failed to verify access token'));
+  }
+
+  function show_login(){
+    $('#terminal').fadeOut(150, function(){
+      $('#login').fadeIn(150, set_heights);
     });
   }
 
@@ -94,24 +111,7 @@ $(function() {
       access_token = data.body.access_token;
       localStorage.setItem("access_token", access_token);
     }
-
     return show_terminal();
-  }
-
-  function login_err(err){
-    $('#login_button').attr('disabled',false);
-    var errMsg = err.errorDescription
-      ? err.errorDescription.split(' - ')[1]
-      : "Login failed - please try again.";
-
-    $('#login_error').html(errMsg);
-    $('#login_error').show();
-
-    if(err.body.error == 'invalid_token'){
-      localStorage.removeItem("access_token");
-    }
-
-    return show_login();
   }
 
   function get_devices(){
@@ -330,7 +330,21 @@ $(function() {
       //api_err_desc += '.';
       colon_api_err_desc = ': ' + api_err_desc;
     }
-    if(data.body.OakTermErr == consts.ERR_MINOR){
+    if(data.body.OakTermErr == consts.ERR_LOGIN){
+      console.log('Login error: ', data.body.OakTermErrDesc + colon_api_err_desc);
+      $('#login_button').attr('disabled',false);
+      $('#login_error').html(data.body.OakTermErrDesc + colon_api_err_desc);
+      $('#login_error').show();
+
+      if(data.body.error == 'invalid_token'){
+        localStorage.removeItem("access_token");
+      }
+      data.body.OakTermErrSilenced = true;
+      data.body.OakTermDoNotRepeat = true;
+      show_login();
+      return Promise.reject(data);
+    }
+    else if(data.body.OakTermErr == consts.ERR_MINOR){
       console.log('Minor error: ', data.body.OakTermErrDesc + colon_api_err_desc);
       data.body.OakTermErrSilenced = true;
       data.body.OakTermDoNotRepeat = true;
