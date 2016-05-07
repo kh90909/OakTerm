@@ -8,8 +8,8 @@ var consts = {
 $(function() {
   var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
-  var API_retries=3;
-  var API_retry_delay=1000; // milliseconds
+  var retry_promise_default_retries=3;
+  var retry_promise_default_delay=1000; // milliseconds
   var claim_code = "";
   var claimed_devices = "";
   var all_devices;
@@ -39,16 +39,16 @@ $(function() {
     var pr = login(firstRun)
       .then(login_success)
       .then(restore_settings)
-      .then(retry_promise(get_devices,oakterm_error_handler,API_retries,API_retry_delay))
+      .then(retry_promise(get_devices,oakterm_error_handler))
       .then(update_devices)
-      .then(retry_promise(get_devinfo,oakterm_error_handler,API_retries,API_retry_delay))
+      .then(retry_promise(get_devinfo,oakterm_error_handler))
       .then(update_devinfo)
       .then(start_pollers);
 
-    pr.then(retry_promise(get_variables,oakterm_error_handler,0,0))
+    pr.then(retry_promise(get_variables,oakterm_error_handler,0))
       .catch(oakterm_error_catch_at_end);
 
-    pr.then(retry_promise(subscribe_events,oakterm_error_handler,API_retries,API_retry_delay))
+    pr.then(retry_promise(subscribe_events,oakterm_error_handler))
       .then(display_event)
       .catch(oakterm_error_catch_at_end);
   }
@@ -72,8 +72,7 @@ $(function() {
     }
 
     return Promise.resolve()
-      .then(retry_promise(action,oakterm_error_handler,
-                          API_retries,API_retry_delay));
+      .then(retry_promise(action,oakterm_error_handler));
   }
 
   function particle_login(email, pass){
@@ -248,7 +247,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(call_function,oakterm_error_handler,0,0))
+      .then(retry_promise(call_function,oakterm_error_handler,0))
       .then(dump_function(name,arg))
       .catch(oakterm_error_catch_at_end);
 
@@ -376,7 +375,7 @@ $(function() {
             // after the reject() below causes retry_promise to retry the
             // subscribe_events() call that generated the error.
             Promise.resolve()
-              .then(retry_promise(subscribe_events,oakterm_error_handler,API_retries,API_retry_delay))
+              .then(retry_promise(subscribe_events,oakterm_error_handler))
               .then(display_event)
               .catch(oakterm_error_catch_at_end);
           }
@@ -402,7 +401,10 @@ $(function() {
     };
   }
 
-  function retry_promise(async_func,error_func,retries,ms_delay) {
+  function retry_promise(async_func,error_func,retries,delay) {
+    retries = typeof retries !== 'undefined' ? retries : retry_promise_default_retries;
+    delay = typeof delay !== 'undefined' ? delay : retry_promise_default_delay;
+
     function async_caller(data){
       if(error_modal_active){
         return Promise.reject(data);
@@ -423,7 +425,7 @@ $(function() {
       }
       var p = async_func();
       for(var i = 0; i < retries; i++) {
-        p = p.catch(delayed_reject(ms_delay)).catch(async_caller);
+        p = p.catch(delayed_reject(delay)).catch(async_caller);
       }
       p = p.catch(error_func).catch(retrier);
 
@@ -464,7 +466,7 @@ $(function() {
 
   function get_and_dump_variable(event){
     Promise.resolve()
-      .then(retry_promise(get_variable(event.target.dataset.variable),oakterm_error_handler,0,0))
+      .then(retry_promise(get_variable(event.target.dataset.variable),oakterm_error_handler,0))
       .then(dump_variable)
       .catch(oakterm_error_catch_at_end);
   }
@@ -615,7 +617,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(send_event,oakterm_error_handler,0,0))
+      .then(retry_promise(send_event,oakterm_error_handler,0))
       .then(dump_sent_event)
       .catch(oakterm_error_catch_at_end);
 
@@ -663,14 +665,13 @@ $(function() {
     // The promise chain is split into two arms after update_devinfo so that
     // a MINOR_ERR in get_variables doesn't block subscribe_events
     var pr = Promise.resolve()
-      .then(retry_promise(get_devinfo,oakterm_error_handler,
-                               API_retries,API_retry_delay))
+      .then(retry_promise(get_devinfo,oakterm_error_handler))
       .then(update_devinfo);
 
-    pr.then(retry_promise(get_variables,oakterm_error_handler,0,0))
+    pr.then(retry_promise(get_variables,oakterm_error_handler,0))
       .catch(oakterm_error_catch_at_end);
 
-    pr.then(retry_promise(subscribe_events,oakterm_error_handler,API_retries,API_retry_delay))
+    pr.then(retry_promise(subscribe_events,oakterm_error_handler))
       .then(display_event)
       .catch(oakterm_error_catch_at_end);
 
@@ -720,7 +721,7 @@ $(function() {
     }
 
     Promise.resolve()
-      .then(retry_promise(send_file,oakterm_error_handler,0,0))
+      .then(retry_promise(send_file,oakterm_error_handler,0))
       .catch(oakterm_error_catch_at_end);
 
     function send_file(){
@@ -873,7 +874,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(send_cmd,oakterm_error_handler,0,0))
+      .then(retry_promise(send_cmd,oakterm_error_handler,0))
       .catch(oakterm_error_catch_at_end);
 
     function send_cmd(){
@@ -891,7 +892,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(send_data(data),oakterm_error_handler,0,0))
+      .then(retry_promise(send_data(data),oakterm_error_handler,0))
       .then(function(){terminal_print(htmlstr);})
       .catch(oakterm_error_catch_at_end);
   }
@@ -910,7 +911,7 @@ $(function() {
   function promise_to_rename_device(newName){
     var oldName = current_device.name;
     Promise.resolve()
-      .then(retry_promise(rename_device,oakterm_error_handler,0,0))
+      .then(retry_promise(rename_device,oakterm_error_handler,0))
       .then(dump_rename_device)
       .then(update_devices)
       .catch(oakterm_error_catch_at_end);
@@ -936,18 +937,16 @@ $(function() {
 
   function refresh_devices(){
     var promise=Promise.resolve();
-    promise.then(retry_promise(get_devices,oakterm_error_handler,
-                               API_retries,API_retry_delay))
+    promise.then(retry_promise(get_devices,oakterm_error_handler))
       .then(update_devices)
       .catch(oakterm_error_catch_at_end);
   }
 
   function refresh_devinfo(){
     Promise.resolve()
-      .then(retry_promise(get_devinfo,oakterm_error_handler,
-                               API_retries,API_retry_delay))
+      .then(retry_promise(get_devinfo,oakterm_error_handler))
       .then(update_devinfo)
-      .then(retry_promise(get_variables,oakterm_error_handler,0,0))
+      .then(retry_promise(get_variables,oakterm_error_handler,0))
       .catch(oakterm_error_catch_at_end);
   }
 
