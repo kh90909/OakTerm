@@ -341,12 +341,6 @@ $(function() {
     do_login();
   });
 
-  $("#login input").keypress(function(event) {
-    if (event.which == 13) {
-        do_login();
-    }
-  });
-
   $("#reboot-all").click(function(e){
     e.preventDefault();
     send_cmd("reboot");
