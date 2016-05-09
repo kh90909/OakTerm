@@ -1,11 +1,12 @@
 var consts = {
-  ERR_MINOR: 0,
-  ERR_MAJOR: 1,
-  ERR_FATAL: 2,
-  ERR_LOGIN: 3
+  ERR_MINOR: 'Minor',
+  ERR_MAJOR: 'Major',
+  ERR_FATAL: 'Fatal',
+  ERR_LOGIN: 'Login'
 };
 
 $(function() {
+  var project_url = 'https://github.com/kh90909/OakTerm/issues';
   var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
   var retry_promise_default_retries=3;
@@ -24,6 +25,48 @@ $(function() {
   var particle = new Particle();
   var activeStream;
 
+  Promise.prototype.delay = function(milliseconds){
+    return this.then(
+      function(data){
+        return new Promise(function(resolve,reject){
+          setTimeout(function(){ resolve(data); }, milliseconds);
+        });
+      }
+    );
+  }
+
+  Promise.prototype.retry = function(async_func, conditional, retries_left, delay){
+    conditional = typeof conditional !== 'undefined' ?
+      conditional : function(retries_left){ return retries_left; };
+
+    retries_left = typeof retries_left !== 'undefined' ?
+      retries_left : retry_promise_default_retries;
+
+    delay = typeof delay !== 'undefined' ?
+      delay : retry_promise_default_delay;
+
+    return this.then(retrier);
+
+    function retrier(data){
+      return Promise.resolve(data)
+        .then(async_func)
+        .catch(function(err){
+          return Promise.resolve({err: err, retries_left: retries_left})
+            .then(conditional)
+            .then(function(modified_retries_left){
+              retries_left = modified_retries_left - 1;
+              if(retries_left >= 0){
+                return Promise.resolve(data)
+                  .delay(delay)
+                  .then(retrier);
+              }else{
+                return Promise.reject(err);
+              }
+            });
+        });
+    }
+  }
+
   $('[data-toggle="tooltip"]').tooltip();
 
   if(access_token){
@@ -39,18 +82,18 @@ $(function() {
     var pr = login(firstRun)
       .then(login_success)
       .then(restore_settings)
-      .then(retry_promise(get_devices,oakterm_error_handler))
+      .retry(get_devices,retry_conditional)
       .then(update_devices)
-      .then(retry_promise(get_devinfo,oakterm_error_handler))
+      .retry(get_devinfo,retry_conditional)
       .then(update_devinfo)
       .then(start_pollers);
 
-    pr.then(retry_promise(get_variables,oakterm_error_handler,0))
-      .catch(oakterm_error_catch_at_end);
+    pr.then(get_variables)
+      .catch(error_handler);
 
-    pr.then(retry_promise(subscribe_events,oakterm_error_handler))
+    pr.retry(subscribe_events,retry_conditional)
       .then(display_event)
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
   }
 
   function login(firstRun){
@@ -72,7 +115,7 @@ $(function() {
     }
 
     return Promise.resolve()
-      .then(retry_promise(action,oakterm_error_handler));
+      .retry(action,retry_conditional);
   }
 
   function particle_login(email, pass){
@@ -247,9 +290,9 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(call_function,oakterm_error_handler,0))
+      .retry(call_function,retry_conditional,0)
       .then(dump_function(name,arg))
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
 
     $('[id="func-'+name+'"]').collapse('hide');
 
@@ -292,165 +335,130 @@ $(function() {
     };
   }
 
-  function oakterm_error_catch_at_end(data){
-    if(!data.body || !('OakTermErr' in data.body)){
-      console.log('oakterm_error_catch_at_end(): OakTermError key not found, leaving uncaught');
-      return Promise.reject(data);
-    }
-    if(data.body.OakTermErrSilenced){
-      console.log('oakterm_error_catch_at_end(): Catching silenced error:',data.body.OakTermErrDesc);
-      return Promise.resolve(data);
-    }
-    console.log('oakterm_error_catch_at_end(): Rejecting on unsilenced error:', data);
-    return Promise.reject(data);
-  }
+  function stringify_error(err, replacer, space){
+    var enumerableErr = {};
+    Object.getOwnPropertyNames(err).forEach(function(key) {
+      enumerableErr[key] = err[key];
+    });
+    return JSON.stringify(enumerableErr, replacer, space);
+  };
 
-  function oakterm_error_handler(data){
-    if(!data){
-      console.log('oakterm_error_handler(): Called without arg');
-    }
-    if(!data.body || !('OakTermErr' in data.body)){
-      console.log('oakterm_error_handler(): OakTermError key not found, leaving uncaught');
-      return Promise.reject(data);
-    }
-    if(data.body.OakTermErrSilenced){
-      return Promise.reject(data);
-    }
-    if(error_modal_active){
-      data.body.OakTermErrSilenced = true;
-      data.body.OakTermDoNotRepeat = true;
-      console.log('oakterm_error_handler(): Silenced error due to modal being active: ' + data.body.OakTermErrDesc + '.');
-      return Promise.reject(data);
+  function error_handler(err){
+    var errCode;
+    var errStr = '';
+
+    if(err && err.body) {
+      errCode = err.body.OakTermErr;
+      errStr = err.body.OakTermErrDesc + '.';
+      if(err.body.error_description)
+        errStr += ' ' + err.body.error_description;
     }
 
-    var api_err_desc = data.body.error_description || '';
-    var colon_api_err_desc = '';
-    if(api_err_desc != ''){
-      //api_err_desc += '.';
-      colon_api_err_desc = ': ' + api_err_desc;
+    if(!err){
+      err = {message: 'oakterm_error_handler(): Called without arg'};
+      console.log(err.message);
     }
-    if(data.body.OakTermErr == consts.ERR_LOGIN){
-      console.log('Login error: ', data.body.OakTermErrDesc + colon_api_err_desc);
+    else if(error_modal_active || (err.body && err.body.OakTermErrHandled)){
+      return;
+    }
+
+    if(!errCode){
+      errCode = 'Unexpected';
+      errStr = 'Unknown error encountered: ' + stringify_error(err) +
+               '\nPlease consider reporting a bug at ' + project_url;
+    }
+    else if(errCode == consts.ERR_LOGIN){
       $('#login_button').attr('disabled',false);
-      $('#login_error').html(data.body.OakTermErrDesc + colon_api_err_desc);
+      $('#login_error').html(errStr);
       $('#login_error').show();
 
-      if(data.body.error == 'invalid_token'){
+      if(err.body.error == 'invalid_token')
         localStorage.removeItem("access_token");
-      }
-      data.body.OakTermErrSilenced = true;
-      data.body.OakTermDoNotRepeat = true;
+
       show_login();
-      return Promise.reject(data);
     }
-    else if(data.body.OakTermErr == consts.ERR_MINOR){
-      console.log('Minor error: ', data.body.OakTermErrDesc + colon_api_err_desc);
-      data.body.OakTermErrSilenced = true;
-      data.body.OakTermDoNotRepeat = true;
-      return Promise.reject(data);
-    } else if(data.body.OakTermErr == consts.ERR_MAJOR){
-      var htmlstr='<div class="text_stderr">' + data.body.OakTermErrDesc +
-                  '. ' + api_err_desc + '</div>'
+
+    err.body = err.body || {};
+    err.body.OakTermErrHandled = true;
+
+    if(errCode == 'Unexpected' || errCode == consts.ERR_MAJOR){
+      var htmlstr='<div class="text_stderr">' + errStr + '</div>'
       terminal_print(htmlstr);
-      console.log('Major error: ', data.body.OakTermErrDesc + colon_api_err_desc);
-      data.body.OakTermErrSilenced = true;
-      data.body.OakTermDoNotRepeat = true;
-      return Promise.reject(data);
-    } else if(data.body.OakTermErr == consts.ERR_FATAL){
-      error_modal_active = true;
-      stream_was_active = activeStream && activeStream.active;
-      console.log('Fatal error: ', data.body.OakTermErrDesc + colon_api_err_desc);
-      stop_pollers();
-      stop_stream();
-      $('#modal-error-message').html(data.body.OakTermErrDesc + '. ' + api_err_desc);
-      var promise = new Promise(function(resolve, reject){
-        $('#modal-error-retry-button').on('click',function(){
-          $('#modal-error-retry-button').off('click');
-          error_modal_active = false;
-          console.log('oakterm_error_handler.on(\'click\',\'#modal-error-retry-button\')(): Clicked retry.')
-          if(stream_was_active){
-            // Only do subscribe_events() if the event stream was active before
-            // the fatal error. Otherwise, if the error resulted from
-            // subscribe_events(), we would try to subscribe here and again
-            // after the reject() below causes retry_promise to retry the
-            // subscribe_events() call that generated the error.
-            Promise.resolve()
-              .then(retry_promise(subscribe_events,oakterm_error_handler))
-              .then(display_event)
-              .catch(oakterm_error_catch_at_end);
-          }
-          start_pollers();
-          reject();
-        });
-      });
-      console.log('oakterm_error_handler(): Showing modal and waiting for promise to resolve on close');
-      $('#modal-error').modal('show');
-      return promise;
     }
+    console.log(errCode, 'error:', errStr);
   }
 
-  function delayed_reject(milliseconds){
-    return function(data){
-      return new Promise(function(resolve,reject){
-        if(error_modal_active){
-          reject(data);
-        }else{
-          setTimeout(function(){ reject(data); },milliseconds);
-        }
-      });
-    };
+  function retry_conditional(obj){
+    var errCode;
+    var errStr = '';
+
+    if(obj.err && obj.err.body) {
+      errCode = obj.err.body.OakTermErr;
+      errStr = obj.err.body.OakTermErrDesc + '.';
+      if(obj.err.body.error_description)
+        errStr += ' ' + obj.err.body.error_description;
+    }
+    if(error_modal_active)
+      return 0;
+    else if(errCode == consts.ERR_FATAL){
+      if(obj.retries_left > 0 && !definitive_error(obj.err))
+        return obj.retries_left;
+      else
+        return fatal_error_modal(errStr).then(function(){return 1;});
+    }
+    else if(definitive_error(obj.err)){
+      return 0;
+    }
+    else
+      return obj.retries_left;
   }
 
-  function retry_promise(async_func,error_func,retries,delay) {
-    retries = typeof retries !== 'undefined' ? retries : retry_promise_default_retries;
-    delay = typeof delay !== 'undefined' ? delay : retry_promise_default_delay;
+  function definitive_error(err){
+    definitive_errors = [ 'invalid_token',
+                          'invalid_grant'];
 
-    function async_caller(data){
-      if(error_modal_active){
-        return Promise.reject(data);
-      }
-      return async_func();
-    }
-    return function retrier(data){
-      if(data && data.body && data.body.OakTermDoNotRepeat) {
-        console.log('retry_promise.retrier(): Rejecting because DoNotRepeat flag set');
-        return Promise.reject(data);
-      }
-      if(data && (data instanceof Error || data.error || data.OakTermErr)){
-        console.log('retry_promise.retrier(): called with error object:',data);
-      }
-      if(error_modal_active){
-        console.log('retry_promise.retrier(): Resolving because error_modal_active');
-        return Promise.resolve(data);
-      }
-      var p = async_func();
-      for(var i = 0; i < retries; i++) {
-        p = p.catch(delayed_reject(delay)).catch(async_caller);
-      }
-      p = p.catch(error_func).catch(retrier);
-
-      return p;
-    }
+    if(err && err.body && definitive_errors.indexOf(err.body.error) != -1)
+      return true;
+    else
+      return false;
   }
 
   $('#modal-error-logout-button').click(logout);
 
-/*  function on_fatal_error(data){
+  function fatal_error_modal(errStr){
+    console.log('Fatal error: ', errStr);
     error_modal_active = true;
+    stream_was_active = activeStream && activeStream.active;
     stop_pollers();
-    $('#modal-error-message').html(data.body.OakTermErrDesc + '. ' + data.body.error_description);
-    var promise = new Promise(function(resolve, reject){
+    stop_stream();
+
+    var pr = new Promise(function(resolve, reject){
       $('#modal-error-retry-button').on('click',function(){
-        error_modal_active = false;
-        start_pollers();
+        var pr = Promise.resolve();
         $('#modal-error-retry-button').off('click');
-        reject(data);
+        error_modal_active = false;
+        console.log('oakterm_error_handler.on(\'click\',\'#modal-error-retry-button\')(): Clicked retry.')
+        if(stream_was_active){
+          // Only do subscribe_events() if the event stream was active before
+          // the fatal error. Otherwise, if the error resulted from
+          // subscribe_events(), we would try to subscribe here and again
+          // after the reject() below causes a retry of the subscribe_events()
+          // call that generated the error.
+          pr = pr.retry(subscribe_events,retry_conditional,1)
+            .then(display_event)
+            .catch(error_handler);
+        }
+        start_pollers();
+        resolve(pr); // Put the promise into the chain so that subscribe_events
+                     // must succeed before proceeding
       });
     });
-    console.log('on_fatal_error(): Showing modal and waiting for promise to resolve on close');
+
+    console.log('oakterm_error_handler(): Showing modal and waiting for promise to resolve on close');
+    $('#modal-error-message').html(errStr);
     $('#modal-error').modal('show');
-    return promise;
-  }*/
+    return pr;
+  }
 
   function get_variable(name){
     return function(data) {
@@ -466,9 +474,9 @@ $(function() {
 
   function get_and_dump_variable(event){
     Promise.resolve()
-      .then(retry_promise(get_variable(event.target.dataset.variable),oakterm_error_handler,0))
+      .retry(get_variable(event.target.dataset.variable),retry_conditional)
       .then(dump_variable)
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
   }
 
   function get_variables(data){
@@ -617,9 +625,9 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(send_event,oakterm_error_handler,0))
+      .retry(send_event,retry_conditional,0)
       .then(dump_sent_event)
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
 
     function send_event(){
       var event={ name: $('#event-name').val(),
@@ -665,15 +673,15 @@ $(function() {
     // The promise chain is split into two arms after update_devinfo so that
     // a MINOR_ERR in get_variables doesn't block subscribe_events
     var pr = Promise.resolve()
-      .then(retry_promise(get_devinfo,oakterm_error_handler))
+      .retry(get_devinfo,retry_conditional)
       .then(update_devinfo);
 
-    pr.then(retry_promise(get_variables,oakterm_error_handler,0))
-      .catch(oakterm_error_catch_at_end);
+    pr.then(get_variables)
+      .catch(error_handler);
 
-    pr.then(retry_promise(subscribe_events,oakterm_error_handler))
+    pr.retry(subscribe_events,retry_conditional)
       .then(display_event)
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
 
   });
 
@@ -721,8 +729,8 @@ $(function() {
     }
 
     Promise.resolve()
-      .then(retry_promise(send_file,oakterm_error_handler,0))
-      .catch(oakterm_error_catch_at_end);
+      .retry(send_file,retry_conditional,0)
+      .catch(error_handler);
 
     function send_file(){
       return new Promise(function(resolve,reject){
@@ -874,8 +882,8 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(send_cmd,oakterm_error_handler,0))
-      .catch(oakterm_error_catch_at_end);
+      .retry(send_cmd,retry_conditional,0)
+      .catch(error_handler);
 
     function send_cmd(){
       var error_msg = 'Error sending command \'' + cmd + '\' to your device via the Particle Cloud';
@@ -892,9 +900,9 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry_promise(send_data(data),oakterm_error_handler,0))
+      .retry(send_data(data),retry_conditional,0)
       .then(function(){terminal_print(htmlstr);})
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
   }
 
   function send_data(data){
@@ -911,10 +919,10 @@ $(function() {
   function promise_to_rename_device(newName){
     var oldName = current_device.name;
     Promise.resolve()
-      .then(retry_promise(rename_device,oakterm_error_handler,0))
+      .retry(rename_device,retry_conditional)
       .then(dump_rename_device)
       .then(update_devices)
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
 
     function rename_device(){
       var oldName = current_device.name;
@@ -936,18 +944,18 @@ $(function() {
   }
 
   function refresh_devices(){
-    var promise=Promise.resolve();
-    promise.then(retry_promise(get_devices,oakterm_error_handler))
+    Promise.resolve()
+      .retry(get_devices,retry_conditional)
       .then(update_devices)
-      .catch(oakterm_error_catch_at_end);
+      .catch(error_handler);
   }
 
   function refresh_devinfo(){
     Promise.resolve()
-      .then(retry_promise(get_devinfo,oakterm_error_handler))
+      .retry(get_devinfo,retry_conditional)
       .then(update_devinfo)
-      .then(retry_promise(get_variables,oakterm_error_handler,0))
-      .catch(oakterm_error_catch_at_end);
+      .then(get_variables)
+      .catch(error_handler);
   }
 
   function start_pollers(data){
