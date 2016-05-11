@@ -114,12 +114,16 @@ body.modal-open::-webkit-scrollbar{ display: none }
   outline: 0;
 }
 .fixed-sidebar{
+  left: 0;
   color:#fff;
   position: fixed;
-  padding-top:70px;
-  padding-bottom:70px;
-  height:100%;
+  padding-top:10px;
+  padding-bottom:10px;
+  top: 70px;
+  bottom: 70px;
+  height: auto;
   overflow-y:auto;
+  overflow-x: hidden;
   z-index: 1;
 }
 .file-input-hidden [type="file"]{
@@ -263,5 +267,7 @@ label.btn {
   .fixed-sidebar{
     width:100%;
   }
-
+  html.sidebar-open{
+    overflow-y: hidden!important;
+  }
 }
