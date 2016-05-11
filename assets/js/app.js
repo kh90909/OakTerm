@@ -1065,6 +1065,9 @@ function set_heights(){
   $("#content").css('padding-top', headerHeight+10);
   $("#content").css('padding-bottom', footerHeight+10);
 
+  $('#content-background').css('top', headerHeight);
+  $('#content-background').css('bottom', footerHeight);
+
   $('.fixed-sidebar').css('top', headerHeight);
   $('.fixed-sidebar').css('bottom', footerHeight);
 }
