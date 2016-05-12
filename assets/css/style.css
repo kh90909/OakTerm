@@ -205,6 +205,7 @@ table.compact td{
   background-size: contain;
   background-repeat: no-repeat;
   background-origin: content-box;
+  opacity: 0.1;
 }
 
 /* Modal */
