@@ -415,6 +415,7 @@ $(function() {
 
   function definitive_error(err){
     definitive_errors = [ 'invalid_token',
+                          'invalid_client',
                           'invalid_grant'];
 
     if(err && err.body && definitive_errors.indexOf(err.body.error) != -1)
@@ -586,6 +587,7 @@ $(function() {
 
   $("#login_button").click(function(e){
     e.preventDefault();
+    $('#login_button').attr('disabled',true);
     do_login();
   });
 
