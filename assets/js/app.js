@@ -25,17 +25,15 @@ $(function() {
   var particle = new Particle();
   var activeStream;
 
-  Promise.prototype.delay = function(milliseconds){
-    return this.then(
-      function(data){
-        return new Promise(function(resolve,reject){
-          setTimeout(function(){ resolve(data); }, milliseconds);
-        });
-      }
-    );
+  function promise_to_delay(milliseconds){
+    return function(data){
+      return new Promise(function(resolve,reject){
+        setTimeout(function(){ resolve(data); }, milliseconds);
+      });
+    };
   }
 
-  Promise.prototype.retry = function(async_func, conditional, retries_left, delay){
+  function retry(async_func, conditional, retries_left, delay){
     conditional = typeof conditional !== 'undefined' ?
       conditional : function(retries_left){ return retries_left; };
 
@@ -45,9 +43,7 @@ $(function() {
     delay = typeof delay !== 'undefined' ?
       delay : retry_promise_default_delay;
 
-    return this.then(retrier);
-
-    function retrier(data){
+    return function retrier(data){
       return Promise.resolve(data)
         .then(async_func)
         .catch(function(err){
@@ -57,14 +53,14 @@ $(function() {
               retries_left = modified_retries_left - 1;
               if(retries_left >= 0){
                 return Promise.resolve(data)
-                  .delay(delay)
+                  .then(promise_to_delay(delay))
                   .then(retrier);
               }else{
                 return Promise.reject(err);
               }
             });
         });
-    }
+    };
   }
 
   $('[data-toggle="tooltip"]').tooltip();
@@ -82,16 +78,16 @@ $(function() {
     var pr = login(firstRun)
       .then(login_success)
       .then(restore_settings)
-      .retry(get_devices,retry_conditional)
+      .then(retry(get_devices,retry_conditional))
       .then(update_devices)
-      .retry(get_devinfo,retry_conditional)
+      .then(retry(get_devinfo,retry_conditional))
       .then(update_devinfo)
       .then(start_pollers);
 
     pr.then(get_variables)
       .catch(error_handler);
 
-    pr.retry(subscribe_events,retry_conditional)
+    pr.then(retry(subscribe_events,retry_conditional))
       .then(display_event)
       .catch(error_handler);
   }
@@ -115,7 +111,7 @@ $(function() {
     }
 
     return Promise.resolve()
-      .retry(action,retry_conditional);
+      .then(retry(action,retry_conditional));
   }
 
   function particle_login(email, pass){
@@ -290,7 +286,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .retry(call_function,retry_conditional,0)
+      .then(retry(call_function,retry_conditional,0))
       .then(dump_function(name,arg))
       .catch(error_handler);
 
@@ -445,7 +441,7 @@ $(function() {
           // subscribe_events(), we would try to subscribe here and again
           // after the reject() below causes a retry of the subscribe_events()
           // call that generated the error.
-          pr = pr.retry(subscribe_events,retry_conditional,1)
+          pr = pr.then(retry(subscribe_events,retry_conditional,1))
             .then(display_event)
             .catch(error_handler);
         }
@@ -475,7 +471,7 @@ $(function() {
 
   function get_and_dump_variable(event){
     Promise.resolve()
-      .retry(get_variable(event.target.dataset.variable),retry_conditional)
+      .then(retry(get_variable(event.target.dataset.variable)),retry_conditional)
       .then(dump_variable)
       .catch(error_handler);
   }
@@ -627,7 +623,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .retry(send_event,retry_conditional,0)
+      .then(retry(send_event,retry_conditional,0))
       .then(dump_sent_event)
       .catch(error_handler);
 
@@ -675,13 +671,13 @@ $(function() {
     // The promise chain is split into two arms after update_devinfo so that
     // a MINOR_ERR in get_variables doesn't block subscribe_events
     var pr = Promise.resolve()
-      .retry(get_devinfo,retry_conditional)
+      .then(retry(get_devinfo,retry_conditional))
       .then(update_devinfo);
 
     pr.then(get_variables)
       .catch(error_handler);
 
-    pr.retry(subscribe_events,retry_conditional)
+    pr.then(retry(subscribe_events,retry_conditional))
       .then(display_event)
       .catch(error_handler);
 
@@ -731,7 +727,7 @@ $(function() {
     }
 
     Promise.resolve()
-      .retry(send_file,retry_conditional,0)
+      .then(retry(send_file,retry_conditional,0))
       .catch(error_handler);
 
     function send_file(){
@@ -884,7 +880,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .retry(send_cmd,retry_conditional,0)
+      .then(retry(send_cmd,retry_conditional,0))
       .catch(error_handler);
 
     function send_cmd(){
@@ -902,7 +898,7 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .retry(send_data(data),retry_conditional,0)
+      .then(retry(send_data(data)),retry_conditional,0)
       .then(function(){terminal_print(htmlstr);})
       .catch(error_handler);
   }
@@ -921,7 +917,7 @@ $(function() {
   function promise_to_rename_device(newName){
     var oldName = current_device.name;
     Promise.resolve()
-      .retry(rename_device,retry_conditional)
+      .then(retry(rename_device,retry_conditional))
       .then(dump_rename_device)
       .then(update_devices)
       .catch(error_handler);
@@ -947,14 +943,14 @@ $(function() {
 
   function refresh_devices(){
     Promise.resolve()
-      .retry(get_devices,retry_conditional)
+      .then(retry(get_devices,retry_conditional))
       .then(update_devices)
       .catch(error_handler);
   }
 
   function refresh_devinfo(){
     Promise.resolve()
-      .retry(get_devinfo,retry_conditional)
+      .then(retry(get_devinfo,retry_conditional))
       .then(update_devinfo)
       .then(get_variables)
       .catch(error_handler);
