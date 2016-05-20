@@ -1,3 +1,12 @@
+// @licstart
+//
+// Copyright (C) 2016 Digistump LLC
+//
+// This file is licensed under the MIT License
+// A copy of this license may be found at http://opensource.org/licenses/MIT
+//
+// @licend
+
 var consts = {
   ERR_MINOR: 'Minor',
   ERR_MAJOR: 'Major',

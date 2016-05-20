@@ -1,3 +1,12 @@
+// @licstart
+//
+// Copyright (C) 2016 Digistump LLC
+//
+// This file is licensed under the MIT License
+// A copy of this license may be found at http://opensource.org/licenses/MIT
+//
+// @licend
+
 /* Terminal Content */
 .selected{
   background-color: #1f8dd6;
@@ -269,6 +278,12 @@ a.func { color: #cfd2da;}
     color: #A0A0A0;
     margin-left: 5px;
     vertical-align: middle;
+}
+a.about-link  {
+  display: block;
+  padding-top: 0.75rem;
+  color: #cfd2da;
+  font-size: 75%;
 }
 
 label.btn {
