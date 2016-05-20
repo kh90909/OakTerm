@@ -77,7 +77,8 @@ $(function() {
 
     if(data.body.access_token){
       access_token = data.body.access_token;
-      localStorage.setItem("access_token", access_token);
+      if($('#remember-me').prop('checked'))
+        localStorage.setItem("access_token", access_token);
     }
 
     return show_terminal();
