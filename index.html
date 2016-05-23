@@ -75,16 +75,9 @@
               <i class="fa fa-paper-plane"></i>
             </button>
           </span>
-          <div class="btn-group">
-            <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="fa fa-power-off" data-toggle="tooltip" data-placement="bottom" title="Reboot"></i>
-            </button>
-            <div class="dropdown-menu">
-              <a class="dropdown-item" href="#" id="reboot-current">Reboot current device</a>
-              <a class="dropdown-item" href="#" id="reboot-all">Reboot all devices</a>
-            </div>
-          </div>
-
+          <button class="btn btn-danger" id="reboot-current" data-toggle="tooltip" data-placement="bottom" title="Reboot">
+            <i class="fa fa-power-off" data-toggle="tooltip" data-placement="bottom" title="Reboot"></i>
+          </button>
           <button class="btn btn-info" id="configmode" data-toggle="tooltip" data-placement="bottom" title="Config Mode">
             <i class="fa fa-cogs"></i></button>
           <button class="btn btn-warning" id="usermode" data-toggle="tooltip" data-placement="bottom" title="User Mode">
