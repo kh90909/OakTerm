@@ -195,6 +195,19 @@ table.compact td{
   padding-bottom:70px;
 }
 
+#content-background{
+  position: fixed;
+  top: 70px;
+  bottom: 70px;
+  padding: 30px;
+  background-image: url('../images/DigistumpLogoHigh.png');
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  opacity: 0.1;
+}
+
 /* Modal */
 .modal{
   color:#373a3c;
@@ -250,6 +263,11 @@ label.btn {
     transition: transform 0.2s ease-out;
     min-width:50%;
   }
+
+  #content-background{
+    width:100%;
+  }
+
   .fixed-sidebar.open{
     transform:translateX(0%);
   }
