@@ -30,14 +30,17 @@
 
     <div id="login" class="container">
       <div class="col-md-6 col-md-offset-3 center">
-        <h2>Particle Cloud Login</h2>
-        <p>Enter the account details used to setup your Oak.</p>
+        <img id="login-logo" src="assets/images/oakterm-logo.png" alt="OakTerm">
       </div>
-
-      <div class="col-md-4 col-md-offset-4 center">
+      <div class="col-xs-12 login-vert-spacer">
+      </div>
+      <div class="col-xs-12 center">
+        <p>Login with the Particle Cloud account<br>you used to setup your Oak</p>
+      </div>
+      <div class="col-xs-12 col-md-4 col-md-offset-4 center">
         <form id="login_form" autocomplete="on" method="POST">
           <fieldset class="form-group">
-            <input name="email" type="email" class="form-control" id="login_email" placeholder="Particle Login email">
+            <input name="email" type="email" class="form-control" id="login_email" placeholder="Particle Login Email">
           </fieldset>
           <fieldset class="form-group">
             <input name="password" type="password" class="form-control" id="login_password" placeholder="Particle Password">
@@ -63,11 +66,11 @@
       <nav id="header" class=" navbar-fixed-top container-fluid">
         <a href="#" id="show-sidebar" class="hidden-md-up col-sm-1"><i class="fa fa-bars"></i></a>
 
-        <div class="col-md-3 col-sm-4 col-xs-12 xs-center">
-          <h1>OakTerm</h1>
+        <div class="col-md-4 col-sm-3 col-xs-12 xs-center">
+          <img id="title-logo" src="assets/images/oakterm-logo-no-tree.png" alt="OakTerm">
         </div>
 
-        <div class="col-md-5 col-sm-7 col-xs-12 sm-align-right xs-center">
+        <div class="col-md-5 col-sm-8 col-xs-12 sm-align-right xs-center">
           <button class="btn btn-success" id="refresh" data-toggle="tooltip" data-placement="bottom" title="Refresh">
             <i class="fa fa-refresh"></i></button>
           <span data-toggle="modal" data-target="#modal-send-event">
@@ -75,16 +78,9 @@
               <i class="fa fa-paper-plane"></i>
             </button>
           </span>
-          <div class="btn-group">
-            <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="fa fa-power-off" data-toggle="tooltip" data-placement="bottom" title="Reboot"></i>
-            </button>
-            <div class="dropdown-menu">
-              <a class="dropdown-item" href="#" id="reboot-current">Reboot current device</a>
-              <a class="dropdown-item" href="#" id="reboot-all">Reboot all devices</a>
-            </div>
-          </div>
-
+          <button class="btn btn-danger" id="reboot-current" data-toggle="tooltip" data-placement="bottom" title="Reboot">
+            <i class="fa fa-power-off" data-toggle="tooltip" data-placement="bottom" title="Reboot"></i>
+          </button>
           <button class="btn btn-info" id="configmode" data-toggle="tooltip" data-placement="bottom" title="Config Mode">
             <i class="fa fa-cogs"></i></button>
           <button class="btn btn-warning" id="usermode" data-toggle="tooltip" data-placement="bottom" title="User Mode">
@@ -93,7 +89,7 @@
             <i class="fa fa-cloud-upload"></i></button>
         </div>
 
-        <form class="form-inline col-lg-4 col-md-3 hidden-sm-down align-right">
+        <form class="form-inline col-md-3 hidden-sm-down align-right">
           <label class="file file-input-hidden">
             <input type="file" id="file-input">
             <button type="button" class="btn btn-secondary">Upload File <i class="fa fa-cloud-upload"></i></button>
