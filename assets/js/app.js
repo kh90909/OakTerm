@@ -1,6 +1,16 @@
+var consts = {
+  ERR_MINOR: 'Minor',
+  ERR_MAJOR: 'Major',
+  ERR_FATAL: 'Fatal',
+  ERR_LOGIN: 'Login'
+};
+
 $(function() {
+  var project_url = 'https://github.com/kh90909/OakTerm/issues';
   var device_list_refresh_interval=10; // seconds
   var device_info_refresh_interval=10; // seconds
+  var retry_promise_default_retries=3;
+  var retry_promise_default_delay=1000; // milliseconds
   var claim_code = "";
   var claimed_devices = "";
   var all_devices;
@@ -10,55 +20,115 @@ $(function() {
   var device_functions = [];
   var settings = get_settings();
   var access_token = localStorage.getItem("access_token");
+  var error_modal_active = false;
 
   var particle = new Particle();
   var activeStream;
 
+  function promise_to_delay(milliseconds){
+    return function(data){
+      return new Promise(function(resolve,reject){
+        setTimeout(function(){ resolve(data); }, milliseconds);
+      });
+    };
+  }
+
+  function retry(async_func, conditional, retries_left, delay){
+    conditional = typeof conditional !== 'undefined' ?
+      conditional : function(retries_left){ return retries_left; };
+
+    retries_left = typeof retries_left !== 'undefined' ?
+      retries_left : retry_promise_default_retries;
+
+    delay = typeof delay !== 'undefined' ?
+      delay : retry_promise_default_delay;
+
+    return function retrier(data){
+      return Promise.resolve(data)
+        .then(async_func)
+        .catch(function(err){
+          return Promise.resolve({err: err, retries_left: retries_left})
+            .then(conditional)
+            .then(function(modified_retries_left){
+              retries_left = modified_retries_left - 1;
+              if(retries_left >= 0){
+                return Promise.resolve(data)
+                  .then(promise_to_delay(delay))
+                  .then(retrier);
+              }else{
+                return Promise.reject(err);
+              }
+            });
+        });
+    };
+  }
+
   $('[data-toggle="tooltip"]').tooltip();
 
-  do_login(true);
+  if(access_token){
+    do_login(true);
+  }else{
+    show_login();
+  }
 
   function do_login(firstRun){
-    login(firstRun)
+    // The promise chain is split into two arms after start_pollers so that
+    // a MINOR_ERR in get_variables doesn't block subscribe_events
+
+    var pr = login(firstRun)
+      .then(login_success)
       .then(restore_settings)
-      .then(get_devices)
+      .then(retry(get_devices,retry_conditional))
       .then(update_devices)
-      .then(get_devinfo)
+      .then(retry(get_devinfo,retry_conditional))
       .then(update_devinfo)
-      .then(start_pollers)
-      .then(get_variables)
-      .then(subscribe_events)
+      .then(start_pollers);
+
+    pr.then(get_variables)
+      .catch(error_handler);
+
+    pr.then(retry(subscribe_events,retry_conditional))
       .then(display_event)
-      .catch(function(err){ console.warn('Error: ', err); });
+      .catch(error_handler);
   }
 
   function login(firstRun){
+    var action;
     $('#login_error').hide();
 
-    if(!access_token){
+    if(!firstRun){ // Login button clicked, so use email and pass
       var email = $('#login_email').val();
       var pass = $('#login_password').val();
 
-      if(!firstRun){
-        return particle.login({
-          username: email,
-          password: pass
-        }).then(login_success, login_err);
-      } else{
-        return show_login('Missing credentials');
-      }
-    } else {
-      return particle.listDevices({ auth: access_token }).then(login_success, login_err);
+      action = particle_login(email,pass);
+    }
+    else if(access_token){ // first run, so use access_token
+      action = verify_token;
+    }
+    else{
+      console.log('This should never happen: firstRun == True and no access_token in login(). Please report a bug.');
+      return Promise.reject();
+    }
+
+    return Promise.resolve()
+      .then(retry(action,retry_conditional));
+  }
+
+  function particle_login(email, pass){
+    return function(){
+      return particle.login({username: email, password: pass})
+        .catch(inject_error(consts.ERR_LOGIN,'Login failed'));
     }
   }
 
-  function show_login(rejectMsg){
-    return new Promise(function(resolve, reject){
-      $('#terminal').fadeOut(150, function(){
-        $('#login').fadeIn(150, set_heights);
-        if( rejectMsg) reject(rejectMsg);
-        else resolve();
-      });
+  function verify_token(){
+    return particle.listDevices({ auth: access_token })
+      .catch(inject_error(consts.ERR_LOGIN,'Failed to verify access token'));
+  }
+
+  function show_login(){
+    $('#terminal').fadeOut(150, function(){
+      $('#login').fadeIn(150, set_heights);
     });
   }
 
@@ -79,41 +149,33 @@ $(function() {
       access_token = data.body.access_token;
       localStorage.setItem("access_token", access_token);
     }
-
     return show_terminal();
   }
 
-  function login_err(err){
-    $('#login_button').attr('disabled',false);
-    var errMsg = err.errorDescription
-      ? err.errorDescription.split(' - ')[1]
-      : "Login failed - please try again.";
-
-    $('#login_error').html(errMsg);
-    $('#login_error').show();
-
-    if(err.body.error == 'invalid_token'){
-      localStorage.removeItem("access_token");
-    }
-
-    return show_login();
+  function get_devices(){
+    var error_msg = 'Error getting a list of your devices from the Particle Cloud';
+    return particle.listDevices({auth: access_token})
+      .catch(inject_error(consts.ERR_FATAL,error_msg));
   }
 
-  function get_devices(){
-    return particle.listDevices({auth: access_token})
+  function dev_namestr(device){
+    var name = "";
+    if(device.name) name += device.name + ' ';
+    name += '(' + device.id.slice(-6) + ')';
+    return name;
   }
 
   function update_devices(devices){
+    if(devices && (devices instanceof Error || devices.error || devices.OakTermErr)){
+      console.log('update_devices(): called with error object',devices);
+    }
     //console.log('Devices: ', devices);
     all_devices = devices.body;
 
     $("#deviceIDs").html('');
 
     _.each(all_devices, function(item, idx) {
-      var name = "";
-      if(item.name) name += item.name+' ';
-      name += '('+item.id.slice(-6)+')';
-
+      var name = dev_namestr(item);
       var curId = current_device ? current_device.id : false;
       var $opt = $('<option>', {value: item.id, selected: (curId == item.id), html: name });
       $("#deviceIDs").append($opt);
@@ -123,13 +185,19 @@ $(function() {
     if( current_device){
       localStorage.setItem("current_device", JSON.stringify(current_device));
     }
+    return devices;
   }
 
   function get_devinfo(){
-    return particle.getDevice({deviceId: current_device.id, auth: access_token});
+    var error_msg = 'Error getting device info via the Particle Cloud for device: ' + dev_namestr(current_device);
+    return particle.getDevice({deviceId: current_device.id, auth: access_token})
+      .catch(inject_error(consts.ERR_FATAL,error_msg));
   }
 
   function update_devinfo(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('update_devinfo(): called with error object:',data);
+    }
     $("#devstatus").attr('data-status', data.body.connected);
 
     if(_.isEmpty(data.body.variables)){
@@ -198,7 +266,7 @@ $(function() {
           $(document).on('shown.bs.collapse', '[id="func-'+item+'"]', function() {
             $('body').find('[id="arg-'+item+'"]').focus();
           });
-          $(document).on('click','[id="btn-'+item+'"]',call_function);
+          $(document).on('click','[id="btn-'+item+'"]',promise_to_call_function);
           $(document).on('keypress','[id="arg-'+item+'"]',function(event) {
             if(event.which == 13) {
               $('body').find('[id="btn-'+item+'"]').trigger("click");
@@ -210,54 +278,221 @@ $(function() {
     }
   }
 
-  function call_function(event){
+  function promise_to_call_function(event){
     var name=this.id.slice(4);
     var arg=$('[id="arg-'+name+'"]').val();
-    particle.callFunction({deviceId: current_device.id,
-                           name: name,
-                           argument: arg,
-                           auth: access_token})
-      .then(function(data){ dump_function(name,arg,data.body.return_value); });
+
+    // Do not retry in case function actually gets called before triggering an
+    // error. Need to confirm ParticleJS API calls are atomic before enabling
+    // retries.
+    Promise.resolve()
+      .then(retry(call_function,retry_conditional,0))
+      .then(dump_function(name,arg))
+      .catch(error_handler);
+
     $('[id="func-'+name+'"]').collapse('hide');
-  }
 
-  function dump_function(func,arg,result){
-    var htmlstr='<div class="text_function">Function call ' +
-                func + '("' + arg + '") returned ' + result + '</div>';
-    terminal_print(htmlstr);
-  }
-
-  function rejected_promise(data){
-    return new Promise(function(resolve, reject){
-      reject(data);
-    });
-  }
-
-  function gen_err_handler(msg){
-    return function(data){
-      console.log(msg + ':', data.body.error);
+    function call_function(){
+      return particle.callFunction({deviceId: current_device.id,
+                             name: name,
+                             argument: arg,
+                             auth: access_token})
+        .catch(inject_error(consts.ERR_MAJOR,'Error calling function via the Particle Cloud (function: ' + name + ')'))
     }
   }
 
+  function dump_function(func,arg){
+    return function(data){
+      var result=data.body.return_value;
+      var htmlstr='<div class="text_function">Function call ' +
+                  func + '("' + arg + '") returned ' + result + '</div>';
+      terminal_print(htmlstr);
+    }
+  }
+
+  function inject_data(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('inject_data(): called with error object:',data);
+    }
+
+    return function(data){
+      data.body = data.body || {};
+      data.body.OakTermData=data;
+      return Promise.resolve(data);
+    };
+  }
+
+  function inject_error(code,desc){
+    return function(data){
+      data.body = data.body || {};
+      data.body.OakTermErr=code;
+      data.body.OakTermErrDesc=desc;
+      return Promise.reject(data);
+    };
+  }
+
+  function stringify_error(err, replacer, space){
+    var enumerableErr = {};
+    Object.getOwnPropertyNames(err).forEach(function(key) {
+      enumerableErr[key] = err[key];
+    });
+    return JSON.stringify(enumerableErr, replacer, space);
+  };
+
+  function error_handler(err){
+    var errCode;
+    var errStr = '';
+
+    if(err && err.body) {
+      errCode = err.body.OakTermErr;
+      errStr = err.body.OakTermErrDesc + '.';
+      if(err.body.error_description)
+        errStr += ' ' + err.body.error_description;
+    }
+
+    if(!err){
+      err = {message: 'oakterm_error_handler(): Called without arg'};
+      console.log(err.message);
+    }
+    else if(error_modal_active || (err.body && err.body.OakTermErrHandled)){
+      return;
+    }
+
+    if(!errCode){
+      errCode = 'Unexpected';
+      errStr = 'Unknown error encountered: ' + stringify_error(err) +
+               '\nPlease consider reporting a bug at ' + project_url;
+    }
+    else if(errCode == consts.ERR_LOGIN){
+      $('#login_button').attr('disabled',false);
+      $('#login_error').html(errStr);
+      $('#login_error').show();
+
+      if(err.body.error == 'invalid_token')
+        localStorage.removeItem("access_token");
+
+      show_login();
+    }
+
+    err.body = err.body || {};
+    err.body.OakTermErrHandled = true;
+
+    if(errCode == 'Unexpected' || errCode == consts.ERR_MAJOR){
+      var htmlstr='<div class="text_stderr">' + errStr + '</div>'
+      terminal_print(htmlstr);
+    }
+    console.log(errCode, 'error:', errStr);
+  }
+
+  function retry_conditional(obj){
+    var errCode;
+    var errStr = '';
+
+    if(obj.err && obj.err.body) {
+      errCode = obj.err.body.OakTermErr;
+      errStr = obj.err.body.OakTermErrDesc + '.';
+      if(obj.err.body.error_description)
+        errStr += ' ' + obj.err.body.error_description;
+    }
+    if(error_modal_active)
+      return 0;
+    else if(errCode == consts.ERR_FATAL){
+      if(obj.retries_left > 0 && !definitive_error(obj.err))
+        return obj.retries_left;
+      else
+        return fatal_error_modal(errStr).then(function(){return 1;});
+    }
+    else if(definitive_error(obj.err)){
+      return 0;
+    }
+    else
+      return obj.retries_left;
+  }
+
+  function definitive_error(err){
+    definitive_errors = [ 'invalid_token',
+                          'invalid_client',
+                          'invalid_grant'];
+
+    if(err && err.body && definitive_errors.indexOf(err.body.error) != -1)
+      return true;
+    else
+      return false;
+  }
+
+  $('#modal-error-logout-button').click(logout);
+
+  function fatal_error_modal(errStr){
+    console.log('Fatal error: ', errStr);
+    error_modal_active = true;
+    stream_was_active = activeStream && activeStream.active;
+    stop_pollers();
+    stop_stream();
+
+    var pr = new Promise(function(resolve, reject){
+      $('#modal-error-retry-button').on('click',function(){
+        var pr = Promise.resolve();
+        $('#modal-error-retry-button').off('click');
+        error_modal_active = false;
+        console.log('oakterm_error_handler.on(\'click\',\'#modal-error-retry-button\')(): Clicked retry.')
+        if(stream_was_active){
+          // Only do subscribe_events() if the event stream was active before
+          // the fatal error. Otherwise, if the error resulted from
+          // subscribe_events(), we would try to subscribe here and again
+          // after the reject() below causes a retry of the subscribe_events()
+          // call that generated the error.
+          pr = pr.then(retry(subscribe_events,retry_conditional,1))
+            .then(display_event)
+            .catch(error_handler);
+        }
+        start_pollers();
+        resolve(pr); // Put the promise into the chain so that subscribe_events
+                     // must succeed before proceeding
+      });
+    });
+
+    console.log('oakterm_error_handler(): Showing modal and waiting for promise to resolve on close');
+    $('#modal-error-message').html(errStr);
+    $('#modal-error').modal('show');
+    return pr;
+  }
+
   function get_variable(name){
-    return particle.getVariable({deviceId: current_device.id, name: name,
-                                 auth: access_token})
-      .then(update_variable)
-      .catch(gen_err_handler('Error getting variable value'));
+    return function(data) {
+      if(data && (data instanceof Error || data.error || data.OakTermErr)){
+        console.log('get_variable.anon(): called with error object:',data);
+      }
+      return particle.getVariable({deviceId: current_device.id, name: name,
+                     auth: access_token})
+        .then(update_variable)
+        .catch(inject_error(consts.ERR_MINOR,'Error getting variable value via the Particle Cloud (variable: ' + name + ')'));
+    }
   }
 
   function get_and_dump_variable(event){
-    get_variable(event.target.dataset.variable)
-      .then(dump_variable);
+    Promise.resolve()
+      .then(retry(get_variable(event.target.dataset.variable)),retry_conditional)
+      .then(dump_variable)
+      .catch(error_handler);
   }
 
-  function get_variables(){
+  function get_variables(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('get_variables(): called with error object:',data);
+    }
+
+    var promise=Promise.resolve();
     _.each(device_vars, function(variable, name) {
-      get_variable(name);
+      promise=promise.then(get_variable(name));
     });
+    return promise;
   }
 
   function update_variable(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('update_variable(): called with error object:',data);
+    }
+
     device_vars[data.body.name].value = data.body.result;
     var localVar = device_vars[data.body.name];
     var result = "";
@@ -274,6 +509,10 @@ $(function() {
   }
 
   function dump_variable(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('dump_variable(): called with error object:',data);
+    }
+
     var device_var = device_vars[data.body.name];
     var htmlstr='<div class="text_variable">Variable ' +
                 data.body.name +': ' + device_var.value +
@@ -282,9 +521,14 @@ $(function() {
 
     terminal_print(htmlstr);
   }
+  function subscribe_events(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('subscribe_events(): called with error object:',data);
+    }
+    var error_msg = 'Error subscribing to the Particle Cloud event stream for device: ' + dev_namestr(current_device);
+    return particle.getEventStream({deviceId: current_device.id,auth: access_token})
+      .catch(inject_error(consts.ERR_FATAL,error_msg));
 
-  function subscribe_events(){
-    return particle.getEventStream({deviceId: current_device.id,auth: access_token});
   }
 
   function format_time_span(optdate) {
@@ -300,11 +544,14 @@ $(function() {
   }
 
   function display_event(stream){
+    if(stream && (stream instanceof Error || stream.error || stream.OakTermErr)){
+      console.log('display_event(): called with error object:',stream);
+    }
+
     activeStream = stream;
     activeStream.active = true;
 
     activeStream.on('event', function(event) {
-
       var event_class="";
       var prestr="";
       switch(event.name){
@@ -318,9 +565,7 @@ $(function() {
         case 'spark/status':
           if(event.data == 'online'){
             console.log('Detected spark/status - online event. Refreshing info and vars');
-            get_devinfo()
-              .then(update_devinfo)
-              .then(get_variables)
+            refresh_devinfo();
           }
           // No break since we want to fall through and display this event
         default:
@@ -338,56 +583,65 @@ $(function() {
 
   $("#login_button").click(function(e){
     e.preventDefault();
+    $('#login_button').attr('disabled',true);
     do_login();
   });
 
   $("#reboot-all").click(function(e){
     e.preventDefault();
-    send_cmd("reboot");
+    promise_to_send_cmd("reboot");
   });
 
   $("#reboot-current").click(function(e){
     e.preventDefault();
-    send_cmd("reboot");
+    promise_to_send_cmd("reboot");
   });
 
   $("#configmode").click(function(){
-    send_cmd("config mode");
+    promise_to_send_cmd("config mode");
   });
 
   $("#usermode").click(function(){
-    send_cmd("user mode");
+    promise_to_send_cmd("user mode");
   });
 
-  $("#logout").click(function(){
+  $("#logout").click(logout);
+
+  function logout(){
     localStorage.removeItem("access_token");
     localStorage.removeItem("current_device");
     location.reload();
-  });
+  }
 
   $("#refresh").click(function(){
-    get_devices()
-      .then(update_devices);
-    get_devinfo()
-      .then(update_devinfo)
-      .then(get_variables);
+    refresh_devices();
+    refresh_devinfo();
   });
 
   $("#modal-send-event-button").click(function(){
-    var event={ name: $('#event-name').val(),
-                data: $('#event-data').val(),
-                isPrivate: $('#event-private').prop('checked'),
-                auth: access_token };
-
-    console.log('Sending event:', event);
-    particle.publishEvent(event)
-      .then(function(response) { return {event:event, response:response}; })
-      .catch(function(response) { return new Promise(function(resolve, reject){
-        reject({event:event, response:response});
-        });
-      })
+    // Do not retry in case event actually gets sent before triggering an
+    // error. Need to confirm ParticleJS API calls are atomic before enabling
+    // retries.
+    Promise.resolve()
+      .then(retry(send_event,retry_conditional,0))
       .then(dump_sent_event)
-      .catch(dump_send_event_err);
+      .catch(error_handler);
+
+    function send_event(){
+      var event={ name: $('#event-name').val(),
+                  data: $('#event-data').val(),
+                  isPrivate: $('#event-private').prop('checked')};
+
+      var error_msg = 'Error sending event: ' + JSON.stringify(event);
+
+      event.auth = access_token; // Add access token after generating error msg
+                                 // since we don't want to print it for security
+                                 // reasons.
+      console.log('Sending event:', event);
+      return particle.publishEvent(event)
+        .then(inject_data({event:event}))
+        .catch(inject_error(consts.ERR_MAJOR,error_msg))
+    }
   });
 
   $('.file-input-hidden > button').on('click', function(){
@@ -401,38 +655,32 @@ $(function() {
     terminal_print(htmlstr);
   }
 
-  function dump_send_event_err(data) {
-    delete data.event['auth'];
-    var eventTime = format_time_span();
-    var errMsg = data.response.errorDescription
-      ? data.response.errorDescription.split(' - ')[1]
-      : "No error description provided.";
-
-    var htmlstr='<div class="text_sentevent">' + eventTime + 'Error sending event: ' +
-                JSON.stringify(data.event) + '. ' +
-                errMsg + '</div>';
-    terminal_print(htmlstr);
-  }
-
   $(document).on('click', '#varstable [data-variable]', get_and_dump_variable);
 
   $("#deviceIDs").on('change',function(){
     current_device= _.findWhere(all_devices, {id: this.value});
     localStorage.setItem("current_device", JSON.stringify(current_device));
 
-    if( activeStream && activeStream.active ){
-      stop_stream();
-    }
+    stop_stream();
 
     var htmlStr = '<div class="text_devadm">Device change: '+current_device.name+'</div>';
     terminal_print(htmlStr);
 
     $('#devtable tbody').html('');
-    get_devinfo()
-      .then(update_devinfo)
-      .then(get_variables)
-      .then(subscribe_events)
-      .then(display_event);
+
+    // The promise chain is split into two arms after update_devinfo so that
+    // a MINOR_ERR in get_variables doesn't block subscribe_events
+    var pr = Promise.resolve()
+      .then(retry(get_devinfo,retry_conditional))
+      .then(update_devinfo);
+
+    pr.then(get_variables)
+      .catch(error_handler);
+
+    pr.then(retry(subscribe_events,retry_conditional))
+      .then(display_event)
+      .catch(error_handler);
+
   });
 
   $('#sidebar').hover(function(){
@@ -455,14 +703,11 @@ $(function() {
     $('#file-input').click();
   });
 
-  $('#file-input').on('change',send_file);
+  $('#file-input').on('change',promise_to_send_file);
 
   $('#send-data-form').on('submit', function(e){
     e.preventDefault();
-    var data=$("#senddata").val()
-    var htmlstr='<div class="text_stdin">'+ data + '</div>';
-    send_data(data);
-    terminal_print(htmlstr);
+    promise_to_send_data($("#senddata").val());
   });
 
   $('#send-data-form [data-submit]').on('click', function(){
@@ -473,46 +718,74 @@ $(function() {
     if( (e.which == 13) && !get_setting('subenter')) e.preventDefault();
   });
 
-  function send_file(e){
-    console.log('send_file(e): e:',e);
+  function promise_to_send_file(e){
+    var file;
     if(e.target.files && e.target.files[0]){
       var file = e.target.files[0];
-      var offset = 0;
-      var slice_len = 255;
+    }else{
+      return; // Notify file not found error?
+    }
 
-      // Disable user "Send Data" button so that it's not possible to send
-      // in the middle of the file upload
-      $("#send-data-form [type='submit']").addClass('disabled');
-      slice_reader();
+    Promise.resolve()
+      .then(retry(send_file,retry_conditional,0))
+      .catch(error_handler);
 
-      function slice_reader(){
-        var reader = new FileReader();
-        var slice = file.slice(offset,offset+slice_len);
+    function send_file(){
+      return new Promise(function(resolve,reject){
+        console.log('send_file(e): e:',e);
+        var offset = 0;
+        var slice_len = 255;
+        var p = Promise.resolve();
 
-        reader.onload = read_handler;
-        reader.onerror = error_handler;
-        reader.readAsBinaryString(slice);
-      };
+        // Disable user "Send Data" button so that it's not possible to send
+        // in the middle of the file upload
+        $("#send-data-form [type='submit']").addClass('disabled');
+        slice_reader();
 
-      function read_handler(e){
-        send_data(e.target.result);
-        offset+=slice_len;
-        if(offset >= file.size){
-          reset_ui();
-          return;
+        function slice_reader(){
+          var reader = new FileReader();
+          var slice = file.slice(offset,offset+slice_len);
+
+          reader.onload = read_handler;
+          reader.onerror = read_error_handler;
+          reader.readAsBinaryString(slice);
+        };
+
+        function read_handler(e){
+          p = p.then(send_data(e.target.result))
+               .then(next_slice)
+               .catch(function(){
+                 e.body = e.body || {}
+                 e.body.OakTermErr = consts.ERR_MAJOR;
+                 e.body.OakTermErrDesc = 'Upload file failed. Error sending data to your device via the Particle Cloud';
+                 reject(e);
+               });
         }
-        setTimeout(slice_reader,1000);
-      }
 
-      function error_handler(e){
-          console.log('Error reading file: ' + e.target.error);
-          reset_ui();
-      }
+        function next_slice(){
+          offset+=slice_len;
+          if(offset >= file.size){
+            reset_ui();
+            resolve();
+          }else{
+            setTimeout(slice_reader,1000);
+          }
+        }
 
-      function reset_ui(){
-          $('#file-input').val(null);
-          $("#send-data-form [type='submit']").removeClass('disabled');
-      }
+        function read_error_handler(e){
+            e.body = e.body || {}
+            e.body.OakTermErr = consts.ERR_MAJOR;
+            e.body.OakTermErrDesc = 'Upload file failed. Error reading file from your computer';
+            console.log('Error reading file: ' + e.target.error);
+            reset_ui();
+            reject(e);
+        }
+
+        function reset_ui(){
+            $('#file-input').val(null);
+            $("#send-data-form [type='submit']").removeClass('disabled');
+        }
+      });
     }
   }
 
@@ -561,18 +834,22 @@ $(function() {
     } else{
       $modal.find('.form-group').removeClass('has-danger');
       $modal.find('input').removeClass('form-control-danger');
-      rename_device(newName).then(function(){
-        $modal.modal('hide');
-      });
+      promise_to_rename_device(newName);
+      $modal.modal('hide');
     }
   });
 
   function stop_stream(stream){
-    if(!stream) stream = activeStream;
-    stream.abort();
-    $('[data-stream-active]').attr('data-stream-active', false);
-    activeStream = null;
-    return activeStream;
+    stream = stream || activeStream;
+    if(stream && stream.active){
+      console.log('stop_stream(): Stopping stream.');
+      stream.abort();
+      $('[data-stream-active]').attr('data-stream-active', false); // Necessary? we don't set data-stream-active true anywhere.
+      activeStream = null;
+      return activeStream;
+    } else {
+      console.log('stop_stream(): No stream active to stop.');
+    }
   }
 
   function toggle_arrow(e){
@@ -598,53 +875,104 @@ $(function() {
     }
   }
 
-  function send_cmd(cmd){
-    console.log("Sending Command: " + cmd);
-    particle.publishEvent({name: 'oak/device/reset/' + current_device.id, data: cmd, isPrivate: true, auth: access_token});
+  function promise_to_send_cmd(cmd){
+    // Do not retry in case command actually gets sent before triggering an
+    // error. Need to confirm ParticleJS API calls are atomic before enabling
+    // retries.
+    Promise.resolve()
+      .then(retry(send_cmd,retry_conditional,0))
+      .catch(error_handler);
+
+    function send_cmd(){
+      var error_msg = 'Error sending command \'' + cmd + '\' to your device via the Particle Cloud';
+      console.log("Sending Command: " + cmd);
+      return particle.publishEvent({name: 'oak/device/reset/' + current_device.id, data: cmd, isPrivate: true, auth: access_token})
+        .catch(inject_error(consts.ERR_MAJOR,error_msg));
+    }
+  }
+
+  function promise_to_send_data(data){
+    var htmlstr='<div class="text_stdin">'+ data + '</div>';
+
+    // Do not retry in case data actually gets sent before triggering an
+    // error. Need to confirm ParticleJS API calls are atomic before enabling
+    // retries.
+    Promise.resolve()
+      .then(retry(send_data(data)),retry_conditional,0)
+      .then(function(){terminal_print(htmlstr);})
+      .catch(error_handler);
   }
 
   function send_data(data){
-    var lineEnd = get_setting('lineends');
-    if(lineEnd) data += lineEnd;
-    console.log("Sending Data: " + data);
-    particle.publishEvent({name: 'oak/device/stdin/' + current_device.id, data: data, isPrivate: true, auth: access_token});
+    return function(){
+      var error_msg = 'Error sending data to your device via the Particle Cloud';
+      var lineEnd = get_setting('lineends');
+      if(lineEnd) data += lineEnd;
+      console.log("Sending Data: " + data);
+      return particle.publishEvent({name: 'oak/device/stdin/' + current_device.id, data: data, isPrivate: true, auth: access_token})
+        .catch(inject_error(consts.ERR_MAJOR,error_msg));
+    }
   }
 
-  function rename_device(newName){
+  function promise_to_rename_device(newName){
     var oldName = current_device.name;
-    return particle.renameDevice({deviceId: current_device.id, name: newName, auth: access_token })
-      .then(function(device){
-        // The rest of the chain expects an array of devices
-        newName = device.body.name;
-        device.body = [device.body];
-        return device;
-      })
+    Promise.resolve()
+      .then(retry(rename_device,retry_conditional))
+      .then(dump_rename_device)
       .then(update_devices)
-      .then(function(device){
-        var htmlstr='<div class="text_devadm">Device Rename: '+oldName+' to '+newName+'</div>';
-        terminal_print(htmlstr);
-      })
+      .catch(error_handler);
+
+    function rename_device(){
+      var oldName = current_device.name;
+      return particle.renameDevice({deviceId: current_device.id, name: newName, auth: access_token })
+        .then(function(device){
+          current_device.name = device.body.name;
+          device.body = all_devices;
+          return device;
+        })
+        .catch(inject_error(consts.ERR_MAJOR,'Failed to rename device'));
+    }
+
+    function dump_rename_device(device){
+      var newName = current_device.name;
+      var htmlstr = '<div class="text_devadm">Device Rename: '+oldName+' to '+newName+'</div>';
+      terminal_print(htmlstr);
+      return device;
+    }
   }
 
-  function start_pollers(){
-    return new Promise(function(resolve, reject){
-      if( pollers.update_devices) clearTimeout( pollers.update_devices);
-      pollers['update_devices'] = setInterval(function(){
-        //console.log('Update device list timer');
-        get_devices()
-          .then(update_devices);
-        },device_list_refresh_interval*1000);
+  function refresh_devices(){
+    Promise.resolve()
+      .then(retry(get_devices,retry_conditional))
+      .then(update_devices)
+      .catch(error_handler);
+  }
 
-      if( pollers.update_devinfo) clearTimeout( pollers.update_devinfo);
-      pollers['update_devinfo'] = setInterval(function(){
-        //console.log('Update device info timer');
-        get_devinfo()
-          .then(update_devinfo)
-          .then(get_variables);
-        },device_info_refresh_interval*1000);
+  function refresh_devinfo(){
+    Promise.resolve()
+      .then(retry(get_devinfo,retry_conditional))
+      .then(update_devinfo)
+      .then(get_variables)
+      .catch(error_handler);
+  }
 
-      resolve();
-    });
+  function start_pollers(data){
+    if(data && (data instanceof Error || data.error || data.OakTermErr)){
+      console.log('start_pollers(): called with error object:',data);
+    }
+
+    console.log('start_pollers(): Starting pollers.');
+    if( pollers.update_devices) clearInterval( pollers.update_devices);
+    pollers['update_devices'] = setInterval(refresh_devices,device_list_refresh_interval*1000);
+
+    if( pollers.update_devinfo) clearInterval( pollers.update_devinfo);
+    pollers['update_devinfo'] = setInterval(refresh_devinfo,device_info_refresh_interval*1000);
+  }
+
+  function stop_pollers(){
+    console.log('stop_pollers(): Stopping pollers.');
+    if( pollers.update_devices) clearInterval( pollers.update_devices);
+    if( pollers.update_devinfo) clearInterval( pollers.update_devinfo);
   }
 
   function save_settings(){
