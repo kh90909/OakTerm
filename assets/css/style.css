@@ -259,7 +259,7 @@ label.btn {
 }
 
 /* Responsive */
-@media (max-width: 768px){
+@media (max-width: 767px){
   .sm-center{ text-align: center; }
   .sm-align-right{ text-align: right; }
   .sm-align-left{ text-align: left; }
@@ -279,7 +279,7 @@ label.btn {
   }
   #footer > div[class^="col-"]{ margin:3px 0;}
 }
-@media (max-width: 544px){
+@media (max-width: 543px){
   .xs-center{ text-align: center; }
   .xs-align-right{ text-align: right; }
   .xs-align-left{ text-align: left; }
