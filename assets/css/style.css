@@ -78,6 +78,12 @@ body, html{ background: #252830; color:#fff; }
   background: rgba(67,72,87,0.4);
 }
 
+#show-sidebar{
+  padding-top: 0.26rem;
+  padding-bottom: 0.13rem;
+  line-height: 1;
+}
+
 /* Bootstrap Overrides */
 html.no-scroll-bars{ overflow-y: auto !important;}
 html.no-scroll-bars body::-webkit-scrollbar,
@@ -279,8 +285,8 @@ label.btn {
   .xs-align-left{ text-align: left; }
   #show-sidebar{
     position: absolute;
-    top:5px;
-    left:10px;
+    top:7px;
+    left:13px;
   }
   .fixed-sidebar{
     width:100%;
