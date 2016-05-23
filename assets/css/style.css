@@ -84,6 +84,13 @@ body, html{ background: #252830; color:#fff; }
   line-height: 1;
 }
 
+#title-logo{
+  height: 2.25rem;
+  margin: 0;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
 /* Bootstrap Overrides */
 html.no-scroll-bars{ overflow-y: auto !important;}
 html.no-scroll-bars body::-webkit-scrollbar,
@@ -165,6 +172,16 @@ table.compact td{
 
 /* Login Form */
 #login_error{ display: none; }
+
+#login-logo{
+  height: 6rem;
+  padding-bottom: 1rem;
+  margin-right: 2rem;
+}
+
+.login-vert-spacer{
+    height: 10vh;
+}
 
 /* Terminal Areas */
 #header,#footer,#content{
@@ -279,15 +296,30 @@ label.btn {
   }
   #footer > div[class^="col-"]{ margin:3px 0;}
 }
-@media (max-width: 543px){
-  .xs-center{ text-align: center; }
-  .xs-align-right{ text-align: right; }
-  .xs-align-left{ text-align: left; }
+
+@media (max-width: 570px){
+  .col-sm-3{
+    width: 100%;
+    text-align: center;
+  }
+  .col-sm-8{
+    width: 100%;
+    text-align: center;
+  }
+  #title-logo{
+    margin-bottom: 0.3rem;
+  }
   #show-sidebar{
     position: absolute;
     top:7px;
     left:13px;
   }
+}
+
+@media (max-width: 543px){
+  .xs-center{ text-align: center; }
+  .xs-align-right{ text-align: right; }
+  .xs-align-left{ text-align: left; }
   .fixed-sidebar{
     width:100%;
   }
