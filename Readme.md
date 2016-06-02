@@ -2,19 +2,8 @@
 
 _*** This is an early work-in-progress. Recommended for development and testing only. The usual disclaimers apply: may brick your Oak, mess with your Particle.io account, scare your cat, etc. ***_
 
-You'll need to use [my fork of OakCore](https://github.com/kh90909/OakCore/tree/cloud-serial-fixes) to compile your Arduino sketch as it fixes some bugs in the cloud serial implementation.
+OakTerm is a terminal app for the Digistump Oak that works in a similar fashion to the Arduino Serial Monitor, but data is sent wirelessly via the Particle Cloud rather than the serial port. In place of the `Serial.begin()`, `Serial.print()`, `Serial.read()`, etc. functions in your Arduino sketch, you use the equivalent `Particle.*` functions instead. 
 
-### Not yet implemented
-* Send event
-* Set variable
-* Call function
-* Upload file
-* Settings
-* Sending to specific device id (right now, commands and data go to all of the online Oaks that are associated with your Particle.io account)
-* Error handling (in the meantime, open the developer tools - F12 in Chrome/Firefox - to see errors)
-* A tidy layout
-* Mobile browser compatibility
+To be able to send commands or data to an Oak, it will need to be running a sketch compiled using a version of OakCore not older than [this commit]( https://github.com/digistump/OakCore/commit/65146bb63e9aecae80573d4b042ba2e34c020410). Further, for the "user mode" button to switch from config back to user mode, the Oak needs to be running a config rom also compiled with a version of OakCore not older than that commit.
 
 **Test it out here: http://rawgit.com/kh90909/OakTerm/master/index.html**
-
-After logging in, your Particle.io access token will be cached in your browser's localstorage so that you don't have to re-enter your email and password each time. Click the logout button to clear the token.
