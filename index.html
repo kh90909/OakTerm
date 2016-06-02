@@ -206,27 +206,6 @@
         <div id="content-background" class="col-md-9 col-md-push-3">
         </div>
         <div id="content" class="col-md-9 col-md-push-3">
-            <div class="text_stdin">Text sent to device via stdin event</div>
-            <div class="text_stdout">Text from device via stdout event</div>
-            <div class="text_stderr">Text received via stderr event</div>
-            <div class="text_event">Event: Event Name - event data (if any) (other events sent from this device)</div>
-            <div class="text_sentevent">Event Sent: Event Name - event data (sent from dialog triggered by button above)</div>
-            <div class="text_variable">Variable: Variable Name - variable value (as triggered by dropdown above)</div>
-            <div class="text_function">Function: Function Name(sent argument value) - return value (as triggered by dropdown above)</div>
-
-            <br><br><br>
-
-            <p>Colors for different types of text should be readily configurable in CSS.</p>
-            <p>This list should auto scroll when it hits the bottom. Auto scroll should be configurable in settings modal.</p>
-            <p>Button that says "Gear Icon" should be a nice (and legally usable) gear icon to open a settings modal that allows the choice of what type of line ending is appended to sent data (\n,\r,\r\n or none), whether or not to send data on enter, and whether or not to auto scroll.</p>
-            <p>Selecting a function from the list or send event should bring up modals to enter arguments for functions and for send event: event name and optional data, and whether to send it to just selected device, all my devices, or all.</p>
-            <p>Upload should allow selecting a file and then send it via the API (might have to post directly to API endpoint, not sure if it works with SparkJS from browser).</p>
-            <p>Before this screen is shown a login prompt should be presented - this should be in pure javascript as a one page app - see github.com/digistump/OakSoftAP for an example (but this doesn't need to include all the sources like that does).</p>
-            <p>This should all be flexible mobile friendly layouts, buttons and text fields should be styled, with clean html, js, and css. Nothing from this demo needs to be used, this is purely to convey a very rough look, function, and feel start point.</p>
-            <p>"Send Data" box should take up as much room as possible while allowing for button and settings icon. Should send on hitting enter if that is enabled in settings</p>
-            <p>Text should wrap and never scroll horizontally.</p>
-            <p>List of devices should refresh whenever refresh is pressed and every 60 seconds, list of registered functions, variables, and device connected status should refresh when refresh is hit and every 10 seconds - those two times should be readily configurable from variables at the top of the javascript.</p>
-            <p>Should work in semi modern Firefox and Chrome, if a library is used (besides ParticleJS/SparkJS which will be 100% necessary) jQuery prefered but other libraries OK as well.</p>
         </div><!-- #content -->
       </div>
 
