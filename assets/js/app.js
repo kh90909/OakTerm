@@ -896,8 +896,8 @@ $(function() {
     // error. Need to confirm ParticleJS API calls are atomic before enabling
     // retries.
     Promise.resolve()
-      .then(retry(send_data(data)),retry_conditional,0)
       .then(function(){terminal_print(htmlstr);})
+      .then(retry(send_data(data)),retry_conditional,0)
       .catch(error_handler);
   }
 
