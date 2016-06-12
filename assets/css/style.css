@@ -42,13 +42,13 @@
 .popover-title{ display: none; }
 
 .var-type-bool  { background-color:#0275d8; border-color: #0275d8; }
-.var-type-int   { background-color:#f0ad4e; border-color: #f0ad4e; }
-.var-type-string{ background-color:#449d44; border-color: #419641; }
+.var-type-int32 { background-color:#d08d2e; border-color: #d08d2e; }
+.var-type-string { background-color:#449d44; border-color: #449d44; }
 .var-type-double{ background-color:#d9534f; border-color: #d9534f; }
 
 .var-type-bool:hover  { background-color:#025aa5; border-color: #01549b; }
-.var-type-int:hover   { background-color:#ec971f; border-color: #eb9316; }
-.var-type-string:hover{ background-color:#449d44; border-color: #419641; }
+.var-type-int32:hover { background-color:#cc7b12; border-color: #be7211; }
+.var-type-string:hover { background-color:#3f8536; border-color: #3b7e33; }
 .var-type-double:hover{ background-color:#c9302c; border-color: #c12e2a; }
 
 
