@@ -311,14 +311,10 @@ $(function() {
     }
   }
 
-  function inject_data(data){
-    if(data && (data instanceof Error || data.error || data.OakTermErr)){
-      console.log('inject_data(): called with error object:',data);
-    }
-
+  function inject_data(additional_data){
     return function(data){
       data.body = data.body || {};
-      data.body.OakTermData=data;
+      data.body.OakTermData=additional_data;
       return Promise.resolve(data);
     };
   }
@@ -650,9 +646,9 @@ $(function() {
   });
 
   function dump_sent_event(data) {
-    delete data.event['auth'];
+    delete data.body.OakTermData.event['auth'];
     var htmlstr='<div class="text_sentevent">Sent event: ' +
-                JSON.stringify(data.event) + '</div>';
+                JSON.stringify(data.body.OakTermData.event) + '</div>';
     terminal_print(htmlstr);
   }
 
