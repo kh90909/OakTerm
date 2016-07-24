@@ -1,3 +1,18 @@
+// app.js
+// A component of OakTerm, a terminal app for the Digistump Oak
+// https://github.com/kh90909/OakTerm
+//
+// Authors: Ken Healy, Eric McNiece
+//
+// @licstart
+//
+// Copyright (C) 2016 Digistump LLC
+//
+// This file is licensed under the MIT License
+// A copy of this license may be found at http://opensource.org/licenses/MIT
+//
+// @licend
+
 var consts = {
   ERR_MINOR: 'Minor',
   ERR_MAJOR: 'Major',
