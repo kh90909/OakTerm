@@ -200,14 +200,23 @@ $(function() {
     current_device = _.findWhere(all_devices, {id: $("#deviceIDs").val()} );
     if( current_device){
       localStorage.setItem("current_device", JSON.stringify(current_device));
+    }else{
+      $('#rename-device-button').prop('disabled',true);
     }
     return devices;
   }
 
   function get_devinfo(){
-    var error_msg = 'Error getting device info via the Particle Cloud for device: ' + dev_namestr(current_device);
-    return particle.getDevice({deviceId: current_device.id, auth: access_token})
-      .catch(inject_error(consts.ERR_FATAL,error_msg));
+    if(current_device){
+      var error_msg = 'Error getting device info via the Particle Cloud for device: ' + dev_namestr(current_device);
+      return particle.getDevice({deviceId: current_device.id, auth: access_token})
+        .catch(inject_error(consts.ERR_FATAL,error_msg));
+    }else{
+      var error_msg = 'No devices registered with the logged in Particle account';
+      var data = {};
+      return Promise.reject(data)
+        .catch(inject_error(consts.ERR_MINOR,error_msg));
+    }
   }
 
   function update_devinfo(data){
@@ -257,6 +266,7 @@ $(function() {
     _.each(_.pick(data.body, 'id', 'last_heard', 'last_ip_address'), function(val, idx){
       $('#devtable tbody').append('<tr><td>'+idx+'</td><td><input class="form-control compact" value="'+val+'" /></td></tr>');
     });
+    $('#rename-device-button').prop('disabled',false);
 
     device_functions = _.filter(device_functions,function(item) {
       if( $.inArray(item,data.body.functions)>-1) {
